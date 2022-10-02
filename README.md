@@ -15,8 +15,9 @@ The library allows to programatically accept or decline operations (switching a 
 ## Examples
 
 ### Playwright
+Below given a simple example. More complex scenarios you can find in [tests/e2e](./tests/e2e) folder.
 
-Set up (add a fixture):
+Setup (add a fixture):
 ```js
 // tests/fixtures.js
 import { test as base } from '@playwright/test'
@@ -27,7 +28,12 @@ export const test = base.extend({
   
   injectWeb3Provider: async ({ page, signers }, use) => {
     await use((privateKeys = signers) => (
-      injectHeadlessWeb3Provider(page, privateKeys, 1377, 'http://localhost:8545')
+      injectHeadlessWeb3Provider(
+        page,
+        privateKeys,            // Private keys that you want to use in tests
+        1337,                   // Chain ID - 1337 is local dev chain id
+        'http://localhost:8545' // RPC URL - all requests are sent to this endpoint
+      )
     ))
   },
 })
