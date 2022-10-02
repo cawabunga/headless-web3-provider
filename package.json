@@ -12,6 +12,14 @@
   "files": [
     "dist/*"
   ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cawabunga/headless-web3-provider.git"
+  },
+  "bugs": {
+    "url": "https://github.com/cawabunga/headless-web3-provider/issues"
+  },
+  "homepage": "https://github.com/cawabunga/headless-web3-provider#readme",
   "scripts": {
     "watch": "parcel watch",
     "prebuild": "rm -rf ./dist/*",
