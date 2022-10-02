@@ -1,3 +1,6 @@
 /node_modules
 /.parcel-cache
 /dist
+/test-results/
+/playwright-report/
+/playwright/.cache/

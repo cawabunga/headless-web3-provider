@@ -1078,7 +1078,7 @@
     chrome-trace-event "^1.0.2"
     nullthrows "^1.1.1"
 
-"@playwright/test@^1.26.0":
+"@playwright/test@^1.26.1":
   version "1.26.1"
   resolved "https://registry.yarnpkg.com/@playwright/test/-/test-1.26.1.tgz#73ada4e70f618bca69ba7509c4ba65b5a41c4b10"
   integrity sha512-bNxyZASVt2adSZ9gbD7NCydzcb5JaI0OR9hc7s+nmPeH604gwp0zp17NNpwXY4c8nvuBGQQ9oGDx72LE+cUWvw==
