@@ -1,10 +1,20 @@
-# headless-web3-provider
-The library emulates a Web3 wallet behaviour like Metamask. It is useful for E2E testing if your application sends transactions or use ethereum authentication.
-The library allows to programatically accept or decline operations (switching a network, connecting a wallet, sending a transaction). It is called "headless" because it doesn't have any interface.
+# Headless Web3 Provider
 
-# Examples
+Metamask replacement for your E2E tests. Why "headless"? Because it doesn't have a visual interface, reject (or accept) transactions direcly from your code!
 
-## Playwright
+## Installation
+
+```shell
+npm i -D headless-web3-provider
+```
+
+## About
+The library emulates a Web3 wallet behaviour like Metamask. It is useful for E2E testing if your application sends transactions or uses ethereum authentication.
+The library allows to programatically accept or decline operations (switching a network, connecting a wallet, sending a transaction).
+
+## Examples
+
+### Playwright
 
 Set up (add a fixture):
 ```js
