@@ -1,0 +1,18 @@
+export const Deny = (): ErrorWithCode =>
+  new ErrorWithCode('The user rejected the request.', 4001)
+
+export const Unauthorized = (): ErrorWithCode =>
+  new ErrorWithCode(
+    'The requested method and/or account has not been authorized by the user.',
+    4100
+  )
+
+export const UnsupportedMethod = (): ErrorWithCode =>
+  new ErrorWithCode('The Provider does not support the requested method.', 4200)
+
+export class ErrorWithCode extends Error {
+  constructor(message?: string, public code?: number) {
+    super(message)
+    return this
+  }
+}
