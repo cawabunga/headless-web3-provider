@@ -10,6 +10,15 @@ export const Unauthorized = (): ErrorWithCode =>
 export const UnsupportedMethod = (): ErrorWithCode =>
   new ErrorWithCode('The Provider does not support the requested method.', 4200)
 
+export const Disconnected = (): ErrorWithCode =>
+  new ErrorWithCode('The Provider is disconnected from all chains.', 4900)
+
+export const ChainDisconnected = (): ErrorWithCode =>
+  new ErrorWithCode(
+    'The Provider is not connected to the requested chain.',
+    4901
+  )
+
 export class ErrorWithCode extends Error {
   constructor(message?: string, public code?: number) {
     super(message)

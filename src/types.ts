@@ -1,15 +1,17 @@
 export interface IWeb3Provider {
-  request(args: { method: 'eth_accounts'; params: string[] }): Promise<string[]>
+  isMetaMask?: boolean
+
+  request(args: { method: 'eth_accounts'; params: [] }): Promise<string[]>
   request(args: {
     method: 'eth_requestAccounts'
-    params: string[]
+    params: []
   }): Promise<string[]>
-  request(args: { method: 'eth_chainId'; params: string[] }): Promise<string>
+  request(args: { method: 'net_version'; params: [] }): Promise<number>
+  request(args: { method: 'eth_chainId'; params: [] }): Promise<string>
   request(args: { method: 'personal_sign'; params: string[] }): Promise<string>
   request(args: { method: string; params?: any[] }): Promise<any>
 
   emit(eventName: string, ...args: any[]): void
-
   on(eventName: string, listener: (eventName: string) => void): void
 }
 

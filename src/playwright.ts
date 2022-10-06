@@ -2,6 +2,14 @@ import type { Page } from '@playwright/test'
 import { makeHeadlessWeb3Provider } from './factory'
 import { IWeb3Provider } from './types'
 
+type Fn = (...args: any[]) => any
+
+declare global {
+  interface Window {
+    ethereum: IWeb3Provider
+  }
+}
+
 export async function injectHeadlessWeb3Provider(
   page: Page,
   privateKeys: string[],
@@ -10,13 +18,17 @@ export async function injectHeadlessWeb3Provider(
 ) {
   const evaluate = async <T extends keyof IWeb3Provider>(
     method: T,
-    ...args: Parameters<IWeb3Provider[T]>
+    ...args: IWeb3Provider[T] extends Fn ? Parameters<IWeb3Provider[T]> : []
   ) => {
     return page.evaluate(
       ([method, args]) => {
-        const ethereum = (window as any).ethereum as IWeb3Provider
-        // @ts-expect-error
-        ethereum[method](...args)
+        const ethereum = window.ethereum
+        const fn = ethereum[method]
+        if (typeof fn == 'function') {
+          // @ts-ignore
+          return fn.apply(ethereum, args)
+        }
+        return ethereum[method]
       },
       [method, args] as const
     )
@@ -33,7 +45,7 @@ export async function injectHeadlessWeb3Provider(
     '__injectedHeadlessWeb3ProviderRequest',
     <T extends keyof IWeb3Provider>(
       method: T,
-      ...args: Parameters<IWeb3Provider[T]>
+      ...args: IWeb3Provider[T] extends Fn ? Parameters<IWeb3Provider[T]> : []
     ) =>
       // @ts-expect-error
       web3Provider[method](...args)
@@ -98,9 +110,6 @@ export async function injectHeadlessWeb3Provider(
         return Reflect.get(...arguments)
       },
     })
-
-    // @ts-expect-error
-    window.ethereum.on('accountsChanged', console.log)
   })
 
   return web3Provider

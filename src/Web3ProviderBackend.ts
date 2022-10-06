@@ -9,29 +9,44 @@ import {
 } from 'rxjs'
 import { ethers } from 'ethers'
 import { Web3RequestKind } from './utils'
-import { Deny, ErrorWithCode, Unauthorized, UnsupportedMethod } from './errors'
+import {
+  ChainDisconnected,
+  Deny,
+  Disconnected,
+  ErrorWithCode,
+  Unauthorized,
+  UnsupportedMethod,
+} from './errors'
 import { IWeb3Provider, PendingRequest } from './types'
 import { EventEmitter } from './EventEmitter'
+
+interface ChainConnection {
+  chainId: number
+  rpcUrl: string
+}
 
 export class Web3ProviderBackend extends EventEmitter implements IWeb3Provider {
   #pendingRequests$ = new BehaviorSubject<PendingRequest[]>([])
   #wallets: ethers.Signer[] = []
+  private _activeChainId: number
+  private _rpc: Record<number, ethers.providers.JsonRpcProvider> = {}
 
   constructor(
     privateKeys: string[],
-    private readonly chainId: number,
-    private readonly chainRpc: ethers.providers.BaseProvider
+    private readonly chains: ChainConnection[]
   ) {
     super()
     this.#wallets = privateKeys.map((key) => new ethers.Wallet(key))
+    this._activeChainId = chains[0].chainId
   }
 
-  request(args: { method: 'eth_accounts'; params: string[] }): Promise<string[]>
+  request(args: { method: 'eth_accounts'; params: [] }): Promise<string[]>
   request(args: {
     method: 'eth_requestAccounts'
     params: string[]
   }): Promise<string[]>
-  request(args: { method: 'eth_chainId'; params: string[] }): Promise<string>
+  request(args: { method: 'net_version'; params: [] }): Promise<number>
+  request(args: { method: 'eth_chainId'; params: [] }): Promise<string>
   request(args: { method: 'personal_sign'; params: string[] }): Promise<string>
   async request({
     method,
@@ -43,27 +58,49 @@ export class Web3ProviderBackend extends EventEmitter implements IWeb3Provider {
     console.log({ method, params })
 
     switch (method) {
+      case 'eth_getBlockByNumber':
+        return this.getRpc().send(method, params)
+
       case 'eth_requestAccounts':
       case 'eth_accounts':
         return this.waitAuthorization({ method, params }, async () => {
-          this.emit('connect', { chainId: this.chainId })
+          const { chainId } = this.getCurrentChain()
+          this.emit('connect', { chainId })
           return Promise.all(this.#wallets.map((wallet) => wallet.getAddress()))
         })
 
-      case 'eth_chainId':
-        return this.chainId
+      case 'eth_chainId': {
+        const { chainId } = this.getCurrentChain()
+        return '0x' + chainId.toString(16)
+      }
+
+      case 'net_version': {
+        const { chainId } = this.getCurrentChain()
+        return chainId
+      }
 
       case 'eth_sendTransaction': {
         return this.waitAuthorization({ method, params }, async () => {
           const wallet = this.#getCurrentWallet()
           const tx = await wallet.signTransaction(params[0])
-          return this.chainRpc.sendTransaction(tx)
+          const rpc = this.getRpc()
+          return rpc.sendTransaction(tx)
+        })
+      }
+
+      case 'wallet_addEthereumChain': {
+        return this.waitAuthorization({ method, params }, async () => {
+          const chainId = Number(params[0].chainId)
+          const rpcUrl = params[0].rpcUrls[0]
+          this.addNetwork(chainId, rpcUrl)
+          return null
         })
       }
 
       case 'wallet_switchEthereumChain': {
         return this.waitAuthorization({ method, params }, async () => {
-          this.emit('chainChanged', this.chainId)
+          const chainId = Number(params[0].chainId)
+          this.switchNetwork(chainId)
           return null
         })
       }
@@ -154,6 +191,51 @@ export class Web3ProviderBackend extends EventEmitter implements IWeb3Provider {
       'accountsChanged',
       await Promise.all(this.#wallets.map((wallet) => wallet.getAddress()))
     )
+  }
+
+  private getCurrentChain(): ChainConnection {
+    const chainConn = this.chains.find(
+      ({ chainId }) => chainId === this._activeChainId
+    )
+    if (!chainConn) {
+      throw Disconnected()
+    }
+    return chainConn
+  }
+
+  private getRpc(): ethers.providers.JsonRpcProvider {
+    const chain = this.getCurrentChain()
+    let rpc = this._rpc[chain.chainId]
+
+    if (!rpc) {
+      rpc = new ethers.providers.JsonRpcProvider(chain.rpcUrl, chain.chainId)
+      this._rpc[chain.chainId] = this._rpc[chain.chainId]
+    }
+
+    return rpc
+  }
+
+  getNetwork(): ChainConnection {
+    return this.getCurrentChain()
+  }
+
+  getNetworks(): ChainConnection[] {
+    return this.chains
+  }
+
+  addNetwork(chainId: number, rpcUrl: string): void {
+    this.chains.push({ chainId, rpcUrl })
+  }
+
+  switchNetwork(chainId_: number): void {
+    const chainConn = this.chains.findIndex(
+      ({ chainId }) => chainId === chainId_
+    )
+    if (!~chainConn) {
+      throw ChainDisconnected()
+    }
+    this._activeChainId = chainId_
+    this.emit('chainChanged', chainId_)
   }
 }
 

@@ -3,4 +3,5 @@ export enum Web3RequestKind {
   Accounts = 'eth_accounts',
   SendTransaction = 'eth_accounts',
   SwitchEthereumChain = 'wallet_switchEthereumChain',
+  AddEthereumChain = 'wallet_addEthereumChain',
 }
