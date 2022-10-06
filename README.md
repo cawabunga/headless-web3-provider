@@ -12,6 +12,20 @@ npm i -D headless-web3-provider
 The library emulates a Web3 wallet behaviour like Metamask. It is useful for E2E testing if your application sends transactions or uses ethereum authentication.
 The library allows to programatically accept or decline operations (switching a network, connecting a wallet, sending a transaction).
 
+#### Supported methods
+
+| Method                     | Confirmable |
+|----------------------------|-------------|
+| eth_getBlockByNumber       | No          |
+| eth_requestAccounts        | Yes         |
+| eth_accounts               | Yes         |
+| eth_chainId                | No          |
+| net_version                | No          |
+| eth_sendTransaction        | Yes         |
+| wallet_addEthereumChain    | Yes         |
+| wallet_switchEthereumChain | Yes         |
+
+
 ## Examples
 
 ### Playwright
