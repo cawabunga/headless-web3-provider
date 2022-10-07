@@ -75,3 +75,11 @@ test('connect the wallet', async ({ page, injectWeb3Provider }) => {
   await test.expect(page.locator('text=0x8b3a08b22d25c60e4b2bfd984e331568eca4c299')).toBeVisible()
 })
 ```
+
+## References
+
+- [Metamask Test DApp](https://metamask.github.io/test-dapp/)
+- [Metamask JSON-RPC API](https://metamask.github.io/api-playground/api-documentation/)
+- [Metamask Provider API](https://docs.metamask.io/guide/ethereum-provider.html)
+- [EIP-1193](https://github.com/ethereum/EIPs/blob/master/EIPS/eip-1193.md) Ethereum Provider JavaScript API
+- [EIP-3085](https://eips.ethereum.org/EIPS/eip-3085) Wallet Add Ethereum Chain RPC Method (`wallet_addEthereumChain`)
