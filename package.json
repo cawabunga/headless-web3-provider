@@ -1,6 +1,6 @@
 {
   "name": "headless-web3-provider",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "Headless Web3 Provider useful in e2e testing",
   "author": "Emil Ibatullin",
   "license": "MIT",
