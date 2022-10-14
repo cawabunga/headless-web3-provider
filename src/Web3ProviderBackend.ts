@@ -30,14 +30,17 @@ export class Web3ProviderBackend extends EventEmitter implements IWeb3Provider {
   #wallets: ethers.Signer[] = []
   private _activeChainId: number
   private _rpc: Record<number, ethers.providers.JsonRpcProvider> = {}
+  private _config: { debug: boolean; logger: typeof console.log }
 
   constructor(
     privateKeys: string[],
-    private readonly chains: ChainConnection[]
+    private readonly chains: ChainConnection[],
+    config: { debug?: boolean; logger?: typeof console.log } = {}
   ) {
     super()
     this.#wallets = privateKeys.map((key) => new ethers.Wallet(key))
     this._activeChainId = chains[0].chainId
+    this._config = Object.assign({ debug: false, logger: console.log }, config)
   }
 
   request(args: { method: 'eth_accounts'; params: [] }): Promise<string[]>
@@ -55,7 +58,9 @@ export class Web3ProviderBackend extends EventEmitter implements IWeb3Provider {
     method: string
     params: any[]
   }): Promise<any> {
-    console.log({ method, params })
+    if (this._config.debug) {
+      this._config.logger({ method, params })
+    }
 
     switch (method) {
       case 'eth_getBlockByNumber':

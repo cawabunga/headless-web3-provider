@@ -10,7 +10,8 @@
   "types": "dist/types.d.ts",
   "sideEffects": false,
   "files": [
-    "dist/*"
+    "dist/*",
+    "README.md"
   ],
   "repository": {
     "type": "git",
