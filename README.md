@@ -1,5 +1,7 @@
 # Headless Web3 Provider
 
+[![Playwright Tests](https://github.com/cawabunga/headless-web3-provider/actions/workflows/playwright.yml/badge.svg)](https://github.com/cawabunga/headless-web3-provider/actions/workflows/playwright.yml)
+
 Metamask replacement for your E2E tests. Why "headless"? Because it doesn't have a visual interface, reject (or accept) transactions direcly from your code!
 
 ## Installation
