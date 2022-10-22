@@ -78,6 +78,73 @@ test('connect the wallet', async ({ page, injectWeb3Provider }) => {
 })
 ```
 
+### Jest
+Add a helper script for injecting the ethereum provider instance.
+```ts
+// tests/web3-helper.ts
+import { Wallet } from 'ethers'
+import { makeHeadlessWeb3Provider, Web3ProviderBackend } from 'headless-web3-provider'
+
+export function injectWeb3Provider(): [[Wallet, ...Wallet[]], Web3ProviderBackend] {
+
+  // Dynamically preconfigure the wallets that will be used in tests
+  const wallets = Array(2).fill(0).map(() => Wallet.createRandom()) as [Wallet, Wallet]
+
+  // Create the instance
+  let web3Manager: Web3ProviderBackend = makeHeadlessWeb3Provider(
+    wallets.map((wallet) => wallet.privateKey),
+    1337,                   // Chain ID - 1337 is local dev chain id
+    'http://localhost:8545' // RPC URL - all requests are sent to this endpoint
+  )
+
+  // Expose the instance
+  // @ts-ignore-error
+  window.ethereum = web3Manager
+
+  // Make it usable in tests
+  return [wallets, web3Manager]
+}
+```
+
+```ts
+// AccountConnect.test.ts
+import { act, render, screen } from '@testing-library/react'
+import type { Wallet } from 'ethers'
+import { Web3ProviderBackend, Web3RequestKind } from 'headless-web3-provider'
+import userEvent from '@testing-library/user-event'
+import { injectWeb3Provider } from 'tests/web3-helper' // Our just created helper script
+import AccountConnect from './AccountConnect'
+
+describe('<AccountConnect />', () => {
+  let wallets: [Wallet, ...Wallet[]]
+  let web3Manager: Web3ProviderBackend
+
+  beforeEach(() => {
+    // Inject window.ethereum instance
+    ;[wallets, web3Manager] = injectWeb3Provider()
+  })
+
+  it('renders user address after connecting', async () => {
+    render(<AccountConnect />)
+
+    // Request connecting the wallet
+    await userEvent.click(screen.getByRole('button', { name: /connect wallet/i }))
+
+
+    // Verify if the wallet is NOT yet connected
+    expect(screen.queryByText(wallets[0].address)).not.toBeInTheDocument()
+    
+    await act(async () => {
+      // You can either authorize or reject the request
+      await web3Manager.authorize(Web3RequestKind.RequestAccounts)
+    })
+
+    // Verify if the wallet is connected
+    expect(screen.getByText(wallets[0].address)).toBeInTheDocument()
+  })
+})
+```
+
 ## References
 
 - [Metamask Test DApp](https://metamask.github.io/test-dapp/)
