@@ -31,6 +31,8 @@ export class Web3ProviderBackend extends EventEmitter implements IWeb3Provider {
   private _activeChainId: number
   private _rpc: Record<number, ethers.providers.JsonRpcProvider> = {}
   private _config: { debug: boolean; logger: typeof console.log }
+  private _authorizedRequests: { [K in Web3RequestKind | string]?: boolean } =
+    {}
 
   constructor(
     privateKeys: string[],
@@ -68,11 +70,17 @@ export class Web3ProviderBackend extends EventEmitter implements IWeb3Provider {
 
       case 'eth_requestAccounts':
       case 'eth_accounts':
-        return this.waitAuthorization({ method, params }, async () => {
-          const { chainId } = this.getCurrentChain()
-          this.emit('connect', { chainId })
-          return Promise.all(this.#wallets.map((wallet) => wallet.getAddress()))
-        })
+        return this.waitAuthorization(
+          { method, params },
+          async () => {
+            const { chainId } = this.getCurrentChain()
+            this.emit('connect', { chainId })
+            return Promise.all(
+              this.#wallets.map((wallet) => wallet.getAddress())
+            )
+          },
+          true
+        )
 
       case 'eth_chainId': {
         const { chainId } = this.getCurrentChain()
@@ -127,12 +135,21 @@ export class Web3ProviderBackend extends EventEmitter implements IWeb3Provider {
 
   waitAuthorization<T>(
     requestInfo: PendingRequest['requestInfo'],
-    task: () => Promise<T>
+    task: () => Promise<T>,
+    permanentPermission = false
   ) {
+    if (this._authorizedRequests[requestInfo.method]) {
+      return task()
+    }
+
     return new Promise((resolve, reject) => {
       const pendingRequest: PendingRequest = {
         requestInfo: requestInfo,
-        async authorize() {
+        authorize: async () => {
+          if (permanentPermission) {
+            this._authorizedRequests[requestInfo.method] = true
+          }
+
           resolve(await task())
         },
         reject(err) {
