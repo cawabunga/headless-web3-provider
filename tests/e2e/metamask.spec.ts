@@ -24,8 +24,16 @@ test('connect the wallet', async ({ page, accounts }) => {
   // Request connecting the wallet
   await page.locator('text=Connect').click()
 
+  expect(
+    wallet.getPendingRequestCount(Web3RequestKind.RequestAccounts)
+  ).toEqual(1)
+
   // You can either authorize or reject the request
   await wallet.authorize(Web3RequestKind.RequestAccounts)
+
+  expect(
+    wallet.getPendingRequestCount(Web3RequestKind.RequestAccounts)
+  ).toEqual(0)
 
   // Verify if the wallet is really connected
   await expect(page.locator('text=Connected')).toBeVisible()
