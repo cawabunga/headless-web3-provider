@@ -27,8 +27,8 @@
     "prebuild": "rm -rf ./dist/*",
     "build": "parcel build --no-optimize",
     "prettify": "prettier --write '**/*.ts'",
-    "preversion": "yarn build && yarn test",
-    "postversion123": "git push --tags && yarn publish . --tag $npm_package_version && git push && echo \"Successfully released version $npm_package_version!\""
+    "prepublish": "yarn build && yarn test",
+    "postpublish": "git push --tags && git push && echo \"Successfully released version $npm_package_version!\""
   },
   "dependencies": {
     "ethers": "^5.7.1",
