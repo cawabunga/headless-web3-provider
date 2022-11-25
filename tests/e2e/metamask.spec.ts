@@ -1,6 +1,5 @@
 import { test, expect } from '../fixtures'
-import { Web3RequestKind } from '../../'
-import { IWeb3Provider, Web3ProviderBackend } from '../../src'
+import { IWeb3Provider, Web3ProviderBackend, Web3RequestKind } from '../../src'
 
 declare global {
   interface Window {
