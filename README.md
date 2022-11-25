@@ -40,8 +40,8 @@ import { injectHeadlessWeb3Provider } from 'headless-web3-provider'
 export const test = base.extend({
   signers: [process.env.PRIVATE_KEY],
   
-  injectWeb3Provider: async ({ page, signers }, use) => {
-    await use((privateKeys = signers) => (
+  injectWeb3Provider: async ({ signers }, use) => {
+    await use((page, privateKeys = signers) => (
       injectHeadlessWeb3Provider(
         page,
         privateKeys,            // Private keys that you want to use in tests
@@ -60,7 +60,7 @@ import { test } from '../fixtures'
 
 test('connect the wallet', async ({ page, injectWeb3Provider }) => {
   // Inject window.ethereum instance
-  const wallet = await injectWeb3Provider()
+  const wallet = await injectWeb3Provider(page)
   
   await page.goto('https://metamask.github.io/test-dapp/')
 
