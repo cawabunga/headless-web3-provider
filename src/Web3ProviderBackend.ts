@@ -169,6 +169,17 @@ export class Web3ProviderBackend extends EventEmitter implements IWeb3Provider {
     return a
   }
 
+  getPendingRequestCount(requestKind?: Web3RequestKind): number {
+    const pendingRequests = this.#pendingRequests$.getValue()
+    if (requestKind == null) {
+      return pendingRequests.length
+    }
+
+    return pendingRequests.filter(
+      (request) => request.requestInfo.method === requestKind
+    ).length
+  }
+
   async authorize(requestKind: Web3RequestKind): Promise<void> {
     const pendingRequest = await this.consumeRequest(requestKind)
     return pendingRequest.authorize()
