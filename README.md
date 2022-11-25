@@ -18,14 +18,17 @@ The library allows to programatically accept or decline operations (switching a 
 
 | Method                     | Confirmable |
 |----------------------------|-------------|
-| eth_getBlockByNumber       | No          |
 | eth_requestAccounts        | Yes         |
 | eth_accounts               | Yes         |
-| eth_chainId                | No          |
-| net_version                | No          |
 | eth_sendTransaction        | Yes         |
 | wallet_addEthereumChain    | Yes         |
 | wallet_switchEthereumChain | Yes         |
+| eth_call                   | No          |
+| eth_estimateGas            | No          |
+| eth_blockNumber            | No          |
+| eth_getBlockByNumber       | No          |
+| eth_chainId                | No          |
+| net_version                | No          |
 
 
 ## Examples

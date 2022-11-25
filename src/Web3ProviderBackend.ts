@@ -65,6 +65,9 @@ export class Web3ProviderBackend extends EventEmitter implements IWeb3Provider {
     }
 
     switch (method) {
+      case 'eth_call':
+      case 'eth_estimateGas':
+      case 'eth_blockNumber':
       case 'eth_getBlockByNumber':
         return this.getRpc().send(method, params)
 
