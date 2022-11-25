@@ -98,9 +98,9 @@ export class Web3ProviderBackend extends EventEmitter implements IWeb3Provider {
       case 'eth_sendTransaction': {
         return this.waitAuthorization({ method, params }, async () => {
           const wallet = this.#getCurrentWallet()
-          const tx = await wallet.signTransaction(params[0])
           const rpc = this.getRpc()
-          return rpc.sendTransaction(tx)
+          const { gas, ...txRequest } = params[0]
+          return wallet.connect(rpc).sendTransaction(txRequest)
         })
       }
 
