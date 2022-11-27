@@ -1,4 +1,4 @@
-import { test, expect } from '../fixtures'
+import { expect, test } from '../fixtures'
 import { IWeb3Provider, Web3ProviderBackend, Web3RequestKind } from '../../src'
 
 declare global {
@@ -72,4 +72,16 @@ test('switch a new network', async ({ page }) => {
   expect(newChainId).toEqual('0x53a')
   expect(prevNetworkId).not.toEqual(newNetworkId)
   expect(prevChainId).not.toEqual(newChainId)
+})
+
+test('deploy a token', async ({ page }) => {
+  await page.locator('text=Connect').click()
+  await wallet.authorize(Web3RequestKind.RequestAccounts)
+
+  await expect(page.locator('#tokenAddress')).toBeEmpty()
+  await page.locator('text=Create Token').click()
+  await expect(page.locator('#tokenAddress')).toBeEmpty()
+
+  await wallet.authorize(Web3RequestKind.SendTransaction)
+  await expect(page.locator('#tokenAddress')).toContainText(/0x.+/)
 })
