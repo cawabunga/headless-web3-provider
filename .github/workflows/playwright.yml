@@ -28,8 +28,15 @@ jobs:
     - name: Build library
       run: yarn build
 
-    - name: Start ethereum node
-      run: docker-compose up -d
+    - name: Install Foundry
+      uses: foundry-rs/foundry-toolchain@v1
+      with:
+        version: nightly
+
+    - name: Start Foundry node
+      run: |
+        anvil -p 8545 --chain-id 1337 &
+        anvil -p 8546 --chain-id 1338 &
 
     - name: Install Playwright Browsers
       run: npx playwright install --with-deps
