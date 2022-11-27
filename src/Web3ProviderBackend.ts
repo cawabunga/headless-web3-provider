@@ -69,6 +69,8 @@ export class Web3ProviderBackend extends EventEmitter implements IWeb3Provider {
       case 'eth_estimateGas':
       case 'eth_blockNumber':
       case 'eth_getBlockByNumber':
+      case 'eth_getTransactionByHash':
+      case 'eth_getTransactionReceipt':
         return this.getRpc().send(method, params)
 
       case 'eth_requestAccounts':
