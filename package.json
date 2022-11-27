@@ -24,11 +24,8 @@
   "scripts": {
     "test": "playwright test",
     "watch": "parcel watch",
-    "prebuild": "rm -rf ./dist/*",
     "build": "parcel build --no-optimize",
-    "prettify": "prettier --write '**/*.ts'",
-    "prepublish": "yarn build && yarn test",
-    "postpublish": "git push --tags && git push && echo \"Successfully released version $npm_package_version!\""
+    "prettify": "prettier --write '**/*.ts'"
   },
   "dependencies": {
     "ethers": "^5.7.1",
