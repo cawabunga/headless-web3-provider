@@ -100,7 +100,8 @@ export class Web3ProviderBackend extends EventEmitter implements IWeb3Provider {
           const wallet = this.#getCurrentWallet()
           const rpc = this.getRpc()
           const { gas, ...txRequest } = params[0]
-          return wallet.connect(rpc).sendTransaction(txRequest)
+          const tx = await wallet.connect(rpc).sendTransaction(txRequest)
+          return tx.hash
         })
       }
 
