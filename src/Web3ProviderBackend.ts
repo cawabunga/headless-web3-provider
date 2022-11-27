@@ -84,7 +84,8 @@ export class Web3ProviderBackend extends EventEmitter implements IWeb3Provider {
               this.#wallets.map((wallet) => wallet.getAddress())
             )
           },
-          true
+          true,
+          'eth_requestAccounts'
         )
 
       case 'eth_chainId': {
@@ -142,9 +143,12 @@ export class Web3ProviderBackend extends EventEmitter implements IWeb3Provider {
   waitAuthorization<T>(
     requestInfo: PendingRequest['requestInfo'],
     task: () => Promise<T>,
-    permanentPermission = false
+    permanentPermission = false,
+    methodOverride?: string
   ) {
-    if (this._authorizedRequests[requestInfo.method]) {
+    const method = methodOverride ?? requestInfo.method
+
+    if (this._authorizedRequests[method]) {
       return task()
     }
 
@@ -153,7 +157,7 @@ export class Web3ProviderBackend extends EventEmitter implements IWeb3Provider {
         requestInfo: requestInfo,
         authorize: async () => {
           if (permanentPermission) {
-            this._authorizedRequests[requestInfo.method] = true
+            this._authorizedRequests[method] = true
           }
 
           resolve(await task())
