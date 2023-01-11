@@ -11,8 +11,7 @@ npm i -D headless-web3-provider
 ```
 
 ## About
-The library emulates a Web3 wallet behaviour like Metamask. It is useful for E2E testing if your application sends transactions or uses ethereum authentication.
-The library allows to programatically accept or decline operations (switching a network, connecting a wallet, sending a transaction).
+The headless-web3-provider library emulates a Web3 wallet similar to Metamask and provides programmatic control over various operations, such as switching networks, connecting a wallet, and sending transactions, making it useful for end-to-end testing of Ethereum-based applications. It allows to programmatically accept or decline operations, making it handy for test automation.
 
 #### Supported methods
 
@@ -45,15 +44,17 @@ import { test as base } from '@playwright/test'
 import { injectHeadlessWeb3Provider } from 'headless-web3-provider'
 
 export const test = base.extend({
+  // signers - the private keys that are to be used in the tests
   signers: [process.env.PRIVATE_KEY],
   
+  // injectWeb3Provider - function that injects web3 provider instance into the page
   injectWeb3Provider: async ({ signers }, use) => {
     await use((page, privateKeys = signers) => (
       injectHeadlessWeb3Provider(
         page,
         privateKeys,            // Private keys that you want to use in tests
-        1337,                   // Chain ID - 1337 is local dev chain id
-        'http://localhost:8545' // RPC URL - all requests are sent to this endpoint
+        1337,                   // Chain ID - 1337 is common testnet id
+        'http://localhost:8545' // Ethereum client's JSON-RPC URL
       )
     ))
   },
@@ -90,23 +91,28 @@ Add a helper script for injecting the ethereum provider instance.
 import { Wallet } from 'ethers'
 import { makeHeadlessWeb3Provider, Web3ProviderBackend } from 'headless-web3-provider'
 
+/**
+ * injectWeb3Provider - Function to create and inject web3 provider instance into the global window object
+ *
+ * @returns {Array} An array containing the wallets and the web3Provider instance
+ */
 export function injectWeb3Provider(): [[Wallet, ...Wallet[]], Web3ProviderBackend] {
 
-  // Dynamically preconfigure the wallets that will be used in tests
+  // Create 2 random instances of Wallet class
   const wallets = Array(2).fill(0).map(() => Wallet.createRandom()) as [Wallet, Wallet]
 
-  // Create the instance
+  // Create an instance of the Web3ProviderBackend class
   let web3Manager: Web3ProviderBackend = makeHeadlessWeb3Provider(
     wallets.map((wallet) => wallet.privateKey),
-    1337,                   // Chain ID - 1337 is local dev chain id
-    'http://localhost:8545' // RPC URL - all requests are sent to this endpoint
+    1337,                   // Chain ID - 1337 or  is a common testnet id
+    'http://localhost:8545' // Ethereum client's JSON-RPC URL
   )
 
-  // Expose the instance
+  // Expose the web3Provider instance to the global window object
   // @ts-ignore-error
   window.ethereum = web3Manager
 
-  // Make it usable in tests
+  // Return the created wallets and web3Provider instance
   return [wallets, web3Manager]
 }
 ```
