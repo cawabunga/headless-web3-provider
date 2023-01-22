@@ -1,3 +1,4 @@
+import { ethers } from 'ethers'
 import { expect, test } from '../fixtures'
 import { IWeb3Provider, Web3ProviderBackend, Web3RequestKind } from '../../src'
 
@@ -84,4 +85,31 @@ test('deploy a token', async ({ page }) => {
 
   await wallet.authorize(Web3RequestKind.SendTransaction)
   await expect(page.locator('#tokenAddress')).toContainText(/0x.+/)
+})
+
+/**
+ * Suite tests "personal_sign" RPC method
+ */
+test('sign a message', async ({ page, signers }) => {
+  // Establish a connection with the wallet
+  await page.locator('text=Connect').click()
+  // Authorize the request for account access
+  await wallet.authorize(Web3RequestKind.RequestAccounts)
+
+  // Expect the result element to be empty before signing
+  await expect(page.locator('#personalSignResult')).toBeEmpty()
+  // Initiate the signing process
+  await page.locator('#personalSign').click()
+
+  // Expect the result element to be empty before authorizing the request
+  await expect(page.locator('#personalSignResult')).toBeEmpty()
+  // Authorize the request to sign the message
+  await wallet.authorize(Web3RequestKind.SignMessage)
+
+  // Prepare the signed message
+  const message = 'Example `personal_sign` message'
+  const signer = new ethers.Wallet(signers[0])
+  const signedMessage = await signer.signMessage(message)
+
+  await expect(page.locator('#personalSignResult')).toContainText(signedMessage)
 })

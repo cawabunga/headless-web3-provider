@@ -7,7 +7,7 @@ type InjectWeb3Provider = (
 ) => Promise<Web3ProviderBackend>
 
 export const test = base.extend<{
-  signers: string[]
+  signers: [string, ...string[]]
   accounts: string[]
   injectWeb3Provider: InjectWeb3Provider
 }>({

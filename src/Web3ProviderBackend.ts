@@ -140,7 +140,7 @@ export class Web3ProviderBackend extends EventEmitter implements IWeb3Provider {
         return this.waitAuthorization({ method, params }, async () => {
           const wallet = this.#getCurrentWallet()
           const address = await wallet.getAddress()
-          assert.equal(address.toLowerCase(), params[1])
+          assert.equal(address, ethers.utils.getAddress(params[1]))
           const message = toUtf8String(params[0])
 
           const signature = await wallet.signMessage(message)
