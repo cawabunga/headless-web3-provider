@@ -49,7 +49,7 @@ test('add a new network', async ({ page }) => {
 })
 
 test('switch a new network', async ({ page }) => {
-  wallet.addNetwork(1338, 'http://localhost:8546')
+  wallet.addNetwork(31338, 'http://localhost:8546')
 
   const [prevNetworkId, prevChainId] = await page.evaluate(() =>
     Promise.all([
@@ -68,7 +68,7 @@ test('switch a new network', async ({ page }) => {
     ])
   )
 
-  expect(newNetworkId).toEqual(1338)
+  expect(newNetworkId).toEqual(31338)
   expect(newChainId).toEqual('0x53a')
   expect(prevNetworkId).not.toEqual(newNetworkId)
   expect(prevChainId).not.toEqual(newChainId)

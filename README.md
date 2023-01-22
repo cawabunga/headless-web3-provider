@@ -54,7 +54,7 @@ export const test = base.extend({
       injectHeadlessWeb3Provider(
         page,
         privateKeys,            // Private keys that you want to use in tests
-        1337,                   // Chain ID - 1337 is common testnet id
+        31337,                  // Chain ID - 31337 is common testnet id
         'http://localhost:8545' // Ethereum client's JSON-RPC URL
       )
     ))
@@ -105,7 +105,7 @@ export function injectWeb3Provider(): [[Wallet, ...Wallet[]], Web3ProviderBacken
   // Create an instance of the Web3ProviderBackend class
   let web3Manager: Web3ProviderBackend = makeHeadlessWeb3Provider(
     wallets.map((wallet) => wallet.privateKey),
-    1337,                   // Chain ID - 1337 or  is a common testnet id
+    31337,                  // Chain ID - 31337 or  is a common testnet id
     'http://localhost:8545' // Ethereum client's JSON-RPC URL
   )
 

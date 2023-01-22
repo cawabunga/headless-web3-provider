@@ -25,8 +25,8 @@ export const test = base.extend<{
       injectHeadlessWeb3Provider(
         page,
         privateKeys,
-        1337,
-        'http://localhost:8545'
+        31337,
+        'http://127.0.0.1:8545'
       )
     )
   },
