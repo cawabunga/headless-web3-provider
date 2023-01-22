@@ -1,7 +1,7 @@
 import { ethers } from 'ethers'
 import { IWeb3Provider } from './types'
 import { EventEmitter } from './EventEmitter'
-import { Web3ProviderBackend } from './Web3ProviderBackend'
+import { Web3ProviderBackend, Web3ProviderConfig } from './Web3ProviderBackend'
 
 type Fn = (...args: any[]) => any
 
@@ -12,12 +12,13 @@ export function makeHeadlessWeb3Provider(
   evaluate: <T extends keyof IWeb3Provider>(
     method: T,
     ...args: IWeb3Provider[T] extends Fn ? Parameters<IWeb3Provider[T]> : []
-  ) => Promise<void> = async () => {}
+  ) => Promise<void> = async () => {},
+  config?: Web3ProviderConfig 
 ) {
   const chainRpc = new ethers.providers.JsonRpcProvider(rpcUrl, chainId)
   const web3Provider = new Web3ProviderBackend(privateKeys, [
     { chainId, rpcUrl },
-  ])
+  ], config)
 
   relayEvents(web3Provider, evaluate)
 

@@ -8,6 +8,9 @@ import {
   tap,
 } from 'rxjs'
 import { ethers } from 'ethers'
+import assert from "assert/strict"
+
+
 import { Web3RequestKind } from './utils'
 import {
   ChainDisconnected,
@@ -19,11 +22,14 @@ import {
 } from './errors'
 import { IWeb3Provider, PendingRequest } from './types'
 import { EventEmitter } from './EventEmitter'
+import { toUtf8String } from 'ethers/lib/utils'
 
 interface ChainConnection {
   chainId: number
   rpcUrl: string
 }
+
+export type Web3ProviderConfig = { debug?: boolean; logger?: typeof console.log }
 
 export class Web3ProviderBackend extends EventEmitter implements IWeb3Provider {
   #pendingRequests$ = new BehaviorSubject<PendingRequest[]>([])
@@ -37,7 +43,7 @@ export class Web3ProviderBackend extends EventEmitter implements IWeb3Provider {
   constructor(
     privateKeys: string[],
     private readonly chains: ChainConnection[],
-    config: { debug?: boolean; logger?: typeof console.log } = {}
+    config: Web3ProviderConfig = {}
   ) {
     super()
     this.#wallets = privateKeys.map((key) => new ethers.Wallet(key))
@@ -118,10 +124,32 @@ export class Web3ProviderBackend extends EventEmitter implements IWeb3Provider {
       }
 
       case 'wallet_switchEthereumChain': {
+        if (this._activeChainId === Number(params[0].chainId)) {
+          return null;
+        }
         return this.waitAuthorization({ method, params }, async () => {
           const chainId = Number(params[0].chainId)
           this.switchNetwork(chainId)
           return null
+        })
+      }
+
+      case 'personal_sign': {
+        return this.waitAuthorization({ method, params }, async () => {
+          const wallet = this.#getCurrentWallet()
+          const address = await wallet.getAddress()
+          assert.equal(address.toLowerCase(), params[1]) 
+          const message = toUtf8String(params[0])
+
+          const signature = await wallet.signMessage(message)
+          if (this._config.debug) {
+            this._config.logger("personal_sign", {
+              message,
+              signature
+            })
+          }
+
+          return signature;
         })
       }
 
@@ -194,6 +222,10 @@ export class Web3ProviderBackend extends EventEmitter implements IWeb3Provider {
     const a = this.#pendingRequests$.getValue()
     this.#pendingRequests$.next([])
     return a
+  }
+
+  getPendingRequests(): PendingRequest["requestInfo"][] {
+    return this.#pendingRequests$.getValue().map(r => r.requestInfo)
   }
 
   getPendingRequestCount(requestKind?: Web3RequestKind): number {
