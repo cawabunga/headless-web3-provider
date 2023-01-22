@@ -1,6 +1,7 @@
 import type { Page } from '@playwright/test'
 import { makeHeadlessWeb3Provider } from './factory'
 import { IWeb3Provider } from './types'
+import { Web3ProviderConfig } from './Web3ProviderBackend'
 
 type Fn = (...args: any[]) => any
 
@@ -14,7 +15,8 @@ export async function injectHeadlessWeb3Provider(
   page: Page,
   privateKeys: string[],
   chainId: number,
-  chainRpcUrl: string
+  chainRpcUrl: string,
+  config?: Web3ProviderConfig
 ) {
   const evaluate = async <T extends keyof IWeb3Provider>(
     method: T,
@@ -38,7 +40,8 @@ export async function injectHeadlessWeb3Provider(
     privateKeys,
     chainId,
     chainRpcUrl,
-    evaluate
+    evaluate,
+    config
   )
 
   await page.exposeFunction(
