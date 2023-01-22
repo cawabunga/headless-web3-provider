@@ -8,8 +8,7 @@ import {
   tap,
 } from 'rxjs'
 import { ethers } from 'ethers'
-import assert from "assert/strict"
-
+import assert from 'assert/strict'
 
 import { Web3RequestKind } from './utils'
 import {
@@ -29,7 +28,10 @@ interface ChainConnection {
   rpcUrl: string
 }
 
-export type Web3ProviderConfig = { debug?: boolean; logger?: typeof console.log }
+export interface Web3ProviderConfig {
+  debug?: boolean
+  logger?: typeof console.log
+}
 
 export class Web3ProviderBackend extends EventEmitter implements IWeb3Provider {
   #pendingRequests$ = new BehaviorSubject<PendingRequest[]>([])
@@ -125,7 +127,7 @@ export class Web3ProviderBackend extends EventEmitter implements IWeb3Provider {
 
       case 'wallet_switchEthereumChain': {
         if (this._activeChainId === Number(params[0].chainId)) {
-          return null;
+          return null
         }
         return this.waitAuthorization({ method, params }, async () => {
           const chainId = Number(params[0].chainId)
@@ -138,18 +140,18 @@ export class Web3ProviderBackend extends EventEmitter implements IWeb3Provider {
         return this.waitAuthorization({ method, params }, async () => {
           const wallet = this.#getCurrentWallet()
           const address = await wallet.getAddress()
-          assert.equal(address.toLowerCase(), params[1]) 
+          assert.equal(address.toLowerCase(), params[1])
           const message = toUtf8String(params[0])
 
           const signature = await wallet.signMessage(message)
           if (this._config.debug) {
-            this._config.logger("personal_sign", {
+            this._config.logger('personal_sign', {
               message,
-              signature
+              signature,
             })
           }
 
-          return signature;
+          return signature
         })
       }
 
@@ -224,8 +226,8 @@ export class Web3ProviderBackend extends EventEmitter implements IWeb3Provider {
     return a
   }
 
-  getPendingRequests(): PendingRequest["requestInfo"][] {
-    return this.#pendingRequests$.getValue().map(r => r.requestInfo)
+  getPendingRequests(): PendingRequest['requestInfo'][] {
+    return this.#pendingRequests$.getValue().map((r) => r.requestInfo)
   }
 
   getPendingRequestCount(requestKind?: Web3RequestKind): number {
