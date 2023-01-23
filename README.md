@@ -22,6 +22,7 @@ The `headless-web3-provider` library emulates a Web3 wallet similar to Metamask 
 | eth_sendTransaction         | Yes         |
 | wallet_addEthereumChain     | Yes         |
 | wallet_switchEthereumChain  | Yes         |
+| personal_sign               | Yes         |
 | eth_call                    | No          |
 | eth_estimateGas             | No          |
 | eth_blockNumber             | No          |
@@ -30,7 +31,6 @@ The `headless-web3-provider` library emulates a Web3 wallet similar to Metamask 
 | eth_getTransactionReceipt   | No          |
 | eth_chainId                 | No          |
 | net_version                 | No          |
-| personal_sign               | Yes         |
 
 
 ## Examples
