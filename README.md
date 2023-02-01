@@ -164,6 +164,3 @@ describe('<AccountConnect />', () => {
 - [Metamask Provider API](https://docs.metamask.io/guide/ethereum-provider.html)
 - [EIP-1193](https://eips.ethereum.org/EIPS/eip-1193) Ethereum Provider JavaScript API
 - [EIP-3085](https://eips.ethereum.org/EIPS/eip-3085) Wallet Add Ethereum Chain RPC Method (`wallet_addEthereumChain`)
-- [EIP-1102](https://eips.ethereum.org/EIPS/eip-1102): Describes a proposed standard for browser extension-based Ethereum providers, which is the base of Metamask provider
-- [EIP-1344](https://eips.ethereum.org/EIPS/eip-1344): Describes a proposed standard for Ethereum provider with wallet management capability and it's the base of Metamask 2.0
-- [EIP-2386](https://eips.ethereum.org/EIPS/eip-2386): Describes a proposed standard for the Ethereum JSON-RPC API
