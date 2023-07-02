@@ -15,22 +15,26 @@ The `headless-web3-provider` library emulates a Web3 wallet similar to Metamask 
 
 #### Supported methods
 
-| Method                      | Confirmable |
-|-----------------------------|-------------|
-| eth_requestAccounts         | Yes         |
-| eth_accounts                | Yes         |
-| eth_sendTransaction         | Yes         |
-| wallet_addEthereumChain     | Yes         |
-| wallet_switchEthereumChain  | Yes         |
-| personal_sign               | Yes         |
-| eth_call                    | No          |
-| eth_estimateGas             | No          |
-| eth_blockNumber             | No          |
-| eth_getBlockByNumber        | No          |
-| eth_getTransactionByHash    | No          |
-| eth_getTransactionReceipt   | No          |
-| eth_chainId                 | No          |
-| net_version                 | No          |
+| Method                     | Confirmable |
+|----------------------------|-------------|
+| eth_requestAccounts        | Yes         |
+| eth_accounts               | Yes         |
+| eth_sendTransaction        | Yes         |
+| wallet_addEthereumChain    | Yes         |
+| wallet_switchEthereumChain | Yes         |
+| personal_sign              | Yes         |
+| eth_signTypedData          | Yes         |
+| eth_signTypedData_v1       | Yes         |
+| eth_signTypedData_v3       | Yes         |
+| eth_signTypedData_v4       | Yes         |
+| eth_call                   | No          |
+| eth_estimateGas            | No          |
+| eth_blockNumber            | No          |
+| eth_getBlockByNumber       | No          |
+| eth_getTransactionByHash   | No          |
+| eth_getTransactionReceipt  | No          |
+| eth_chainId                | No          |
+| net_version                | No          |
 
 
 ## Examples
