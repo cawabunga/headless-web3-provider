@@ -28,6 +28,7 @@
     "prettify": "prettier --write '**/*.ts'"
   },
   "dependencies": {
+    "@metamask/eth-sig-util": "^6.0.0",
     "ethers": "^5.7.1",
     "rxjs": "^7.5.7"
   },

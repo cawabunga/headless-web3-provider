@@ -1,12 +1,6 @@
 import { ethers } from 'ethers'
 import { expect, test } from '../fixtures'
-import { IWeb3Provider, Web3ProviderBackend, Web3RequestKind } from '../../src'
-
-declare global {
-  interface Window {
-    ethereum: IWeb3Provider
-  }
-}
+import { Web3ProviderBackend, Web3RequestKind } from '../../src'
 
 let wallet: Web3ProviderBackend
 
@@ -113,3 +107,70 @@ test('sign a message', async ({ page, signers }) => {
 
   await expect(page.locator('#personalSignResult')).toContainText(signedMessage)
 })
+
+/**
+ * Suite tests for eth_signTypedData RPC methods
+ */
+const data = [
+  {
+    version: 'eth_signTypedData',
+    requestKind: Web3RequestKind.SignTypedData,
+    signButtonId: 'signTypedData',
+    signResultId: 'signTypedDataResult',
+    verifyButtonId: 'signTypedDataVerify',
+    verifyResultId: 'signTypedDataVerifyResult',
+  },
+  {
+    version: 'eth_signTypedData_v3',
+    requestKind: Web3RequestKind.SignTypedDataV3,
+    signButtonId: 'signTypedDataV3',
+    signResultId: 'signTypedDataV3Result',
+    verifyButtonId: 'signTypedDataV3Verify',
+    verifyResultId: 'signTypedDataV3VerifyResult',
+  },
+  {
+    version: 'eth_signTypedData_v4',
+    requestKind: Web3RequestKind.SignTypedDataV4,
+    signButtonId: 'signTypedDataV4',
+    signResultId: 'signTypedDataV4Result',
+    verifyButtonId: 'signTypedDataV4Verify',
+    verifyResultId: 'signTypedDataV4VerifyResult',
+  },
+]
+for (const {
+  version,
+  requestKind,
+  signButtonId,
+  signResultId,
+  verifyButtonId,
+  verifyResultId,
+} of data) {
+  test(`sign a typed message (${version})`, async ({ page, signers }) => {
+    // Establish a connection with the wallet
+    await page.locator('text=Connect').click()
+    // Authorize the request for account access
+    await wallet.authorize(Web3RequestKind.RequestAccounts)
+
+    // Expect the result element to be empty before signing
+    await expect(page.locator(`#${signResultId}`)).toBeEmpty()
+    // Initiate the signing process
+    await page.locator(`#${signButtonId}`).click()
+
+    // Expect the result element to be empty before authorizing the request
+    await expect(page.locator(`#${signResultId}`)).toBeEmpty()
+    // Authorize the request to sign the message
+    await wallet.authorize(requestKind)
+
+    // Expect the result element to contain the signature
+    await expect(page.locator(`#${signResultId}`)).toContainText(/^0x.+/)
+
+    // Verify the signature
+    await expect(page.locator(`#${verifyResultId}`)).toBeEmpty()
+    await page.locator(`#${verifyButtonId}`).click()
+
+    // Signer address should be recovered from the signature
+    await expect(page.locator(`#${verifyResultId}`)).toContainText(
+      new ethers.Wallet(signers[0]).address.toLowerCase()
+    )
+  })
+}
