@@ -7,7 +7,8 @@ import {
   first,
   tap,
 } from 'rxjs'
-import { ethers } from 'ethers'
+import { ethers, Wallet } from 'ethers'
+import { signTypedData, SignTypedDataVersion } from '@metamask/eth-sig-util'
 import assert from 'assert/strict'
 
 import { Web3RequestKind } from './utils'
@@ -61,6 +62,14 @@ export class Web3ProviderBackend extends EventEmitter implements IWeb3Provider {
   request(args: { method: 'net_version'; params: [] }): Promise<number>
   request(args: { method: 'eth_chainId'; params: [] }): Promise<string>
   request(args: { method: 'personal_sign'; params: string[] }): Promise<string>
+  request(args: {
+    method: 'eth_signTypedData' | 'eth_signTypedData_v1'
+    params: [object[], string]
+  }): Promise<string>
+  request(args: {
+    method: 'eth_signTypedData_v3' | 'eth_signTypedData_v4'
+    params: string[]
+  }): Promise<string>
   async request({
     method,
     params,
@@ -152,6 +161,43 @@ export class Web3ProviderBackend extends EventEmitter implements IWeb3Provider {
           }
 
           return signature
+        })
+      }
+
+      case 'eth_signTypedData':
+      case 'eth_signTypedData_v1': {
+        return this.waitAuthorization({ method, params }, async () => {
+          const wallet = this.#getCurrentWallet() as Wallet
+          const address = await wallet.getAddress()
+          assert.equal(address, ethers.utils.getAddress(params[1]))
+
+          const msgParams = params[0]
+
+          return signTypedData({
+            privateKey: Buffer.from(wallet.privateKey.slice(2), 'hex'),
+            data: msgParams,
+            version: SignTypedDataVersion.V1,
+          })
+        })
+      }
+
+      case 'eth_signTypedData_v3':
+      case 'eth_signTypedData_v4': {
+        return this.waitAuthorization({ method, params }, async () => {
+          const wallet = this.#getCurrentWallet() as Wallet
+          const address = await wallet.getAddress()
+          assert.equal(address, ethers.utils.getAddress(params[0]))
+
+          const msgParams = JSON.parse(params[1])
+
+          return signTypedData({
+            privateKey: Buffer.from(wallet.privateKey.slice(2), 'hex'),
+            data: msgParams,
+            version:
+              method === 'eth_signTypedData_v4'
+                ? SignTypedDataVersion.V4
+                : SignTypedDataVersion.V3,
+          })
         })
       }
 
