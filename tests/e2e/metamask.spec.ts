@@ -1,12 +1,6 @@
 import { ethers } from 'ethers'
 import { expect, test } from '../fixtures'
-import { IWeb3Provider, Web3ProviderBackend, Web3RequestKind } from '../../src'
-
-declare global {
-  interface Window {
-    ethereum: IWeb3Provider
-  }
-}
+import { Web3ProviderBackend, Web3RequestKind } from '../../src'
 
 let wallet: Web3ProviderBackend
 
