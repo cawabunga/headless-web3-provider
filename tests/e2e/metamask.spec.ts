@@ -69,6 +69,25 @@ test('switch a new network', async ({ page }) => {
   expect(prevChainId).not.toEqual(newChainId)
 })
 
+test('request permissions', async ({ page, accounts }) => {
+  await page.locator('text=Connect').click()
+  await wallet.authorize(Web3RequestKind.RequestAccounts)
+
+  // Request permissions
+  await page.locator('text=Request Permissions').click()
+
+  expect(
+    wallet.getPendingRequestCount(Web3RequestKind.RequestPermissions)
+  ).toEqual(1)
+
+  // You can either authorize or reject the request
+  await wallet.authorize(Web3RequestKind.RequestPermissions)
+
+  expect(
+    wallet.getPendingRequestCount(Web3RequestKind.RequestPermissions)
+  ).toEqual(0)
+})
+
 test('deploy a token', async ({ page }) => {
   await page.locator('text=Connect').click()
   await wallet.authorize(Web3RequestKind.RequestAccounts)

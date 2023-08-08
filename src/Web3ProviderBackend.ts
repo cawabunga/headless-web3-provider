@@ -145,6 +145,16 @@ export class Web3ProviderBackend extends EventEmitter implements IWeb3Provider {
         })
       }
 
+      case 'wallet_requestPermissions': {
+        if (params.length === 0 || params[0].eth_accounts === undefined) {
+          throw Deny()
+        }
+
+        return this.waitAuthorization({ method, params }, async () => {
+          return [{ parentCapability: 'eth_accounts' }]
+        })
+      }
+
       case 'personal_sign': {
         return this.waitAuthorization({ method, params }, async () => {
           const wallet = this.#getCurrentWallet()
