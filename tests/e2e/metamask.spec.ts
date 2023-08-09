@@ -15,6 +15,12 @@ test.beforeEach(async ({ page, injectWeb3Provider }) => {
 })
 
 test('connect the wallet', async ({ page, accounts }) => {
+ // Until the wallet is connected, the accounts should be empty
+ let ethAccounts = await page.evaluate(() =>
+      window.ethereum.request({ method: 'eth_accounts', params: [] })
+  );
+  expect(ethAccounts).toEqual([]);
+
   // Request connecting the wallet
   await page.locator('text=Connect').click()
 
@@ -32,6 +38,12 @@ test('connect the wallet', async ({ page, accounts }) => {
   // Verify if the wallet is really connected
   await expect(page.locator('text=Connected')).toBeVisible()
   await expect(page.locator('text=' + accounts[0])).toBeVisible()
+
+  // After connecting the wallet, the accounts should be available
+  ethAccounts = await page.evaluate(() =>
+    window.ethereum.request({ method: 'eth_accounts', params: [] })
+  );
+  expect(ethAccounts).toEqual(accounts);
 })
 
 test('add a new network', async ({ page }) => {
