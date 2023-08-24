@@ -17,7 +17,7 @@ export const test = base.extend<{
   ],
 
   accounts: async ({ signers }, use) => {
-    await use(signers.map((k) => new ethers.Wallet(k).address))
+    await use(signers.map((k) => new ethers.Wallet(k).address.toLowerCase()))
   },
 
   injectWeb3Provider: async ({ page, signers }, use) => {

@@ -94,7 +94,9 @@ export class Web3ProviderBackend extends EventEmitter implements IWeb3Provider {
         return this.waitAuthorization(
           { method, params },
           async () => {
-            const accounts = await Promise.all(this.#wallets.map((wallet) => wallet.getAddress()))
+            const accounts = await Promise.all(
+              this.#wallets.map(async (wallet) => (await wallet.getAddress()).toLowerCase())
+            )
             this.emit('accountsChanged', accounts)
             return accounts
           },
@@ -104,7 +106,9 @@ export class Web3ProviderBackend extends EventEmitter implements IWeb3Provider {
 
       case 'eth_accounts': {
         if (this._authorizedRequests['eth_requestAccounts']) {
-          return await Promise.all(this.#wallets.map((wallet) => wallet.getAddress()))
+          return await Promise.all(
+            this.#wallets.map(async (wallet) => (await wallet.getAddress()).toLowerCase())
+          )
         }
         return []
       }
@@ -327,7 +331,7 @@ export class Web3ProviderBackend extends EventEmitter implements IWeb3Provider {
     this.#wallets = privateKeys.map((key) => new ethers.Wallet(key))
     this.emit(
       'accountsChanged',
-      await Promise.all(this.#wallets.map((wallet) => wallet.getAddress()))
+      await Promise.all(this.#wallets.map(async (wallet) => (await wallet.getAddress()).toLowerCase()))
     )
   }
 
