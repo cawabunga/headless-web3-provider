@@ -98,6 +98,11 @@ test('request permissions', async ({ page, accounts }) => {
   expect(
     wallet.getPendingRequestCount(Web3RequestKind.RequestPermissions)
   ).toEqual(0)
+
+  const ethAccounts = await page.evaluate(() =>
+    window.ethereum.request({ method: 'eth_accounts', params: [] })
+  );
+  expect(ethAccounts).toEqual(accounts);
 })
 
 test('deploy a token', async ({ page }) => {
