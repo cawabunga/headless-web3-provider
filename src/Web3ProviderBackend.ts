@@ -327,7 +327,7 @@ export class Web3ProviderBackend extends EventEmitter implements IWeb3Provider {
     this.#wallets = privateKeys.map((key) => new ethers.Wallet(key))
     this.emit(
       'accountsChanged',
-      await Promise.all(this.#wallets.map(async (wallet) => (await wallet.getAddress()).toLowerCase())
+      await Promise.all(this.#wallets.map(async (wallet) => (await wallet.getAddress()).toLowerCase()))
     )
   }
 
