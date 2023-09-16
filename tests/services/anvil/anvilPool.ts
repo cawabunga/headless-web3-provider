@@ -49,8 +49,6 @@ async function getNextPort(port: number) {
   port = port % 65536 // don't go over 65535 (max port number)
 
   return new Promise<number>((resolve, reject) => {
-    return resolve(port) // bun fails to connect to the port, so we just skip this check
-
     const socket = new Socket()
 
     const timeout = () => {
