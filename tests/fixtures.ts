@@ -1,6 +1,7 @@
 import { ethers } from 'ethers'
 import { test as base } from '@playwright/test'
 import { injectHeadlessWeb3Provider, Web3ProviderBackend } from '../src'
+import { anvilPool } from './utils/anvil-pool'
 
 type InjectWeb3Provider = (
   privateKeys?: string[]
@@ -10,6 +11,7 @@ export const test = base.extend<{
   signers: [string, ...string[]]
   accounts: string[]
   injectWeb3Provider: InjectWeb3Provider
+  anvilRpcUrl: string
 }>({
   signers: [
     // anvil dev key
@@ -20,14 +22,15 @@ export const test = base.extend<{
     await use(signers.map((k) => new ethers.Wallet(k).address.toLowerCase()))
   },
 
-  injectWeb3Provider: async ({ page, signers }, use) => {
+  anvilRpcUrl: async ({}, use) => {
+    const anvilInstance = await anvilPool.acquire()
+    await use(anvilInstance.rpcUrl)
+    await anvilPool.destroy(anvilInstance)
+  },
+
+  injectWeb3Provider: async ({ page, signers, anvilRpcUrl }, use) => {
     await use((privateKeys = signers) =>
-      injectHeadlessWeb3Provider(
-        page,
-        privateKeys,
-        31337,
-        'http://127.0.0.1:8545'
-      )
+      injectHeadlessWeb3Provider(page, privateKeys, 31337, anvilRpcUrl)
     )
   },
 })
