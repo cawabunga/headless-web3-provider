@@ -1,7 +1,7 @@
 import { ethers } from 'ethers'
 import { test as base } from '@playwright/test'
 import { injectHeadlessWeb3Provider, Web3ProviderBackend } from '../src'
-import { anvilPool } from './utils/anvil-pool'
+import { getAnvilInstance } from './services/anvil/anvilPoolClient'
 
 type InjectWeb3Provider = (
   privateKeys?: string[]
@@ -23,9 +23,9 @@ export const test = base.extend<{
   },
 
   anvilRpcUrl: async ({}, use) => {
-    const anvilInstance = await anvilPool.acquire()
+    const anvilInstance = await getAnvilInstance()
     await use(anvilInstance.rpcUrl)
-    await anvilPool.destroy(anvilInstance)
+    await anvilInstance.destroy()
   },
 
   injectWeb3Provider: async ({ page, signers, anvilRpcUrl }, use) => {
