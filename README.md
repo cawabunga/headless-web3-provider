@@ -40,38 +40,6 @@ The `headless-web3-provider` library emulates a Web3 wallet similar to Metamask 
 
 ## Examples
 
-### Foundry
-
-It would be good to have [Foundry](https://book.getfoundry.sh/getting-started/installation) to run tests with sending transactions.
-
-```sh
-> curl -L https://foundry.paradigm.xyz | bash
-> foundryup
-> anvil
-
-
-                             _   _
-                            (_) | |
-      __ _   _ __   __   __  _  | |
-     / _` | | '_ \  \ \ / / | | | |
-    | (_| | | | | |  \ V /  | | | |
-     \__,_| |_| |_|   \_/   |_| |_|
-
-    0.2.0 (74c0318 2023-09-14T00:27:34.192518000Z)
-    https://github.com/foundry-rs/foundry
-
-Available Accounts
-==================
-
-(0) "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266" (10000.000000000000000000 ETH)
-...
-
-Private Keys
-==================
-
-(0) 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
-...
-```
 
 ### Playwright
 Below given a simple example. More complex scenarios you can find in [tests/e2e](./tests/e2e) folder.
@@ -194,6 +162,14 @@ describe('<AccountConnect />', () => {
   })
 })
 ```
+
+
+## Additional Tools
+
+Enhance your testing environment with these complementary tools that integrate seamlessly with `headless-web3-provider`:
+
+- [Foundry Anvil](https://book.getfoundry.sh/getting-started/installation) - a dev chain platform ideal for testing your applications against.
+
 
 ## Resources
 
