@@ -33,11 +33,6 @@ jobs:
       with:
         version: nightly
 
-    - name: Start Foundry node
-      run: |
-        anvil -p 8545 --chain-id 31337 &
-        anvil -p 8546 --chain-id 1338 &
-
     - name: Install Playwright Browsers
       run: npx playwright install --with-deps
 
