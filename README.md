@@ -168,7 +168,7 @@ describe('<AccountConnect />', () => {
 
 Enhance your testing environment with these complementary tools that integrate seamlessly with `headless-web3-provider`:
 
-- [Foundry Anvil](https://book.getfoundry.sh/getting-started/installation) - a dev chain platform ideal for testing your applications against.
+- [Foundry Anvil]([https://book.getfoundry.sh/getting-started/installation](https://book.getfoundry.sh/anvil/)) - a dev chain platform ideal for testing your applications against.
 
 
 ## Resources
