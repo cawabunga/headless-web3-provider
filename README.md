@@ -40,6 +40,7 @@ The `headless-web3-provider` library emulates a Web3 wallet similar to Metamask 
 
 ## Examples
 
+
 ### Playwright
 Below given a simple example. More complex scenarios you can find in [tests/e2e](./tests/e2e) folder.
 
@@ -52,7 +53,7 @@ import { injectHeadlessWeb3Provider } from 'headless-web3-provider'
 export const test = base.extend({
   // signers - the private keys that are to be used in the tests
   signers: [process.env.PRIVATE_KEY],
-  
+
   // injectWeb3Provider - function that injects web3 provider instance into the page
   injectWeb3Provider: async ({ signers }, use) => {
     await use((page, privateKeys = signers) => (
@@ -75,7 +76,7 @@ import { test } from '../fixtures'
 test('connect the wallet', async ({ page, injectWeb3Provider }) => {
   // Inject window.ethereum instance
   const wallet = await injectWeb3Provider(page)
-  
+
   await page.goto('https://metamask.github.io/test-dapp/')
 
   // Request connecting the wallet
@@ -150,7 +151,7 @@ describe('<AccountConnect />', () => {
 
     // Verify if the wallet is NOT yet connected
     expect(screen.queryByText(wallets[0].address)).not.toBeInTheDocument()
-    
+
     await act(async () => {
       // You can either authorize or reject the request
       await web3Manager.authorize(Web3RequestKind.RequestAccounts)
@@ -161,6 +162,14 @@ describe('<AccountConnect />', () => {
   })
 })
 ```
+
+
+## Additional Tools
+
+Enhance your testing environment with these complementary tools that integrate seamlessly with `headless-web3-provider`:
+
+- [Foundry Anvil](https://book.getfoundry.sh/anvil/) - a dev chain platform ideal for testing your applications against.
+
 
 ## Resources
 
