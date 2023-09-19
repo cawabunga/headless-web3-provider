@@ -13,12 +13,14 @@ export function makeHeadlessWeb3Provider(
     method: T,
     ...args: IWeb3Provider[T] extends Fn ? Parameters<IWeb3Provider[T]> : []
   ) => Promise<void> = async () => {},
-  config?: Web3ProviderConfig 
+  config?: Web3ProviderConfig
 ) {
   const chainRpc = new ethers.providers.JsonRpcProvider(rpcUrl, chainId)
-  const web3Provider = new Web3ProviderBackend(privateKeys, [
-    { chainId, rpcUrl },
-  ], config)
+  const web3Provider = new Web3ProviderBackend(
+    privateKeys,
+    [{ chainId, rpcUrl }],
+    config
+  )
 
   relayEvents(web3Provider, evaluate)
 

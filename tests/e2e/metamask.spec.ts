@@ -16,9 +16,9 @@ test.beforeEach(async ({ page, injectWeb3Provider }) => {
 })
 
 test('connect the wallet', async ({ page, accounts }) => {
- // Until the wallet is connected, the accounts should be empty
- let ethAccounts = await page.evaluate(() =>
-      window.ethereum.request({ method: 'eth_accounts', params: [] })
+  // Until the wallet is connected, the accounts should be empty
+  let ethAccounts = await page.evaluate(() =>
+    window.ethereum.request({ method: 'eth_accounts', params: [] })
   )
   expect(ethAccounts).toEqual([])
 
@@ -118,12 +118,16 @@ test('deploy a token', async ({ page }) => {
   await expect(page.locator('#tokenAddress')).toContainText(/0x.+/)
 })
 
-const getTransactionCount = async (page: Page, account: string): Promise<number> => {
-  const res = await page.evaluate(addr =>
-    window.ethereum.request({
-      method: 'eth_getTransactionCount',
-      params: [addr, 'latest']
-    }),
+const getTransactionCount = async (
+  page: Page,
+  account: string
+): Promise<number> => {
+  const res = await page.evaluate(
+    (addr) =>
+      window.ethereum.request({
+        method: 'eth_getTransactionCount',
+        params: [addr, 'latest'],
+      }),
     account
   )
   return Number(res)
@@ -138,9 +142,8 @@ test('send legacy transaction', async ({ page, accounts }) => {
   await wallet.authorize(Web3RequestKind.SendTransaction)
 
   const nonceAfter = await getTransactionCount(page, accounts[0])
-  expect(nonceAfter).toEqual(nonceBefore+1)
+  expect(nonceAfter).toEqual(nonceBefore + 1)
 })
-
 
 test('send EIP-1559 transaction', async ({ page, accounts }) => {
   await page.locator('text=Connect').click()
@@ -151,7 +154,7 @@ test('send EIP-1559 transaction', async ({ page, accounts }) => {
   await wallet.authorize(Web3RequestKind.SendTransaction)
 
   const nonceAfter = await getTransactionCount(page, accounts[0])
-  expect(nonceAfter).toEqual(nonceBefore+1)
+  expect(nonceAfter).toEqual(nonceBefore + 1)
 })
 
 /**

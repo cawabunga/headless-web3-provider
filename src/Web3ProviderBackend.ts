@@ -1,3 +1,4 @@
+import assert from 'node:assert/strict'
 import {
   filter,
   firstValueFrom,
@@ -9,7 +10,6 @@ import {
 } from 'rxjs'
 import { ethers, Wallet } from 'ethers'
 import { signTypedData, SignTypedDataVersion } from '@metamask/eth-sig-util'
-import assert from 'assert/strict'
 
 import { Web3RequestKind } from './utils'
 import {
@@ -111,7 +111,9 @@ export class Web3ProviderBackend extends EventEmitter implements IWeb3Provider {
           { method, params },
           async () => {
             const accounts = await Promise.all(
-              this.#wallets.map(async (wallet) => (await wallet.getAddress()).toLowerCase())
+              this.#wallets.map(async (wallet) =>
+                (await wallet.getAddress()).toLowerCase()
+              )
             )
             this.emit('accountsChanged', accounts)
             return accounts
@@ -123,7 +125,9 @@ export class Web3ProviderBackend extends EventEmitter implements IWeb3Provider {
       case 'eth_accounts': {
         if (this._authorizedRequests['eth_requestAccounts']) {
           return await Promise.all(
-            this.#wallets.map(async (wallet) => (await wallet.getAddress()).toLowerCase())
+            this.#wallets.map(async (wallet) =>
+              (await wallet.getAddress()).toLowerCase()
+            )
           )
         }
         return []
@@ -178,7 +182,9 @@ export class Web3ProviderBackend extends EventEmitter implements IWeb3Provider {
 
         return this.waitAuthorization({ method, params }, async () => {
           const accounts = await Promise.all(
-            this.#wallets.map(async (wallet) => (await wallet.getAddress()).toLowerCase())
+            this.#wallets.map(async (wallet) =>
+              (await wallet.getAddress()).toLowerCase()
+            )
           )
           this.emit('accountsChanged', accounts)
           return [{ parentCapability: 'eth_accounts' }]
@@ -259,7 +265,7 @@ export class Web3ProviderBackend extends EventEmitter implements IWeb3Provider {
   waitAuthorization<T>(
     requestInfo: PendingRequest['requestInfo'],
     task: () => Promise<T>,
-    permanentPermission = false,
+    permanentPermission = false
   ) {
     if (this._authorizedRequests[requestInfo.method]) {
       return task()
@@ -349,7 +355,11 @@ export class Web3ProviderBackend extends EventEmitter implements IWeb3Provider {
     this.#wallets = privateKeys.map((key) => new ethers.Wallet(key))
     this.emit(
       'accountsChanged',
-      await Promise.all(this.#wallets.map(async (wallet) => (await wallet.getAddress()).toLowerCase()))
+      await Promise.all(
+        this.#wallets.map(async (wallet) =>
+          (await wallet.getAddress()).toLowerCase()
+        )
+      )
     )
   }
 
@@ -409,31 +419,47 @@ function without<T>(list: T[], item: T): T[] {
 
 // Allowed keys for a JSON-RPC transaction as defined in:
 // https://ethereum.github.io/execution-apis/api-documentation/
-const allowedTransactionKeys =  ['accessList', 'chainId', 'data', 'from', 'gas', 'gasPrice', 'maxFeePerGas',
-  'maxPriorityFeePerGas', 'nonce', 'to', 'type', 'value']
+const allowedTransactionKeys = [
+  'accessList',
+  'chainId',
+  'data',
+  'from',
+  'gas',
+  'gasPrice',
+  'maxFeePerGas',
+  'maxPriorityFeePerGas',
+  'nonce',
+  'to',
+  'type',
+  'value',
+]
 
 // Convert a JSON-RPC transaction to an ethers.js transaction.
 // The reverse of this function can be found in the ethers.js library:
 // https://github.com/ethers-io/ethers.js/blob/v5.7.2/packages/providers/src.ts/json-rpc-provider.ts#L701
-function convertJsonRpcTxToEthersTxRequest(tx: { [key: string]: any }): ethers.providers.TransactionRequest {
+function convertJsonRpcTxToEthersTxRequest(tx: {
+  [key: string]: any
+}): ethers.providers.TransactionRequest {
   const result: any = {}
 
   allowedTransactionKeys.forEach((key) => {
-    if (tx[key] == null) { return }
+    if (tx[key] == null) {
+      return
+    }
 
     switch (key) {
       // gasLimit is referred to as "gas" in JSON-RPC
-      case "gas":
+      case 'gas':
         result['gasLimit'] = tx[key]
         return
       // ethers.js expects `chainId` and `type` to be a number
-      case "chainId":
-      case "type":
+      case 'chainId':
+      case 'type':
         result[key] = Number(tx[key])
         return
       default:
         result[key] = tx[key]
     }
-  });
+  })
   return result
 }
