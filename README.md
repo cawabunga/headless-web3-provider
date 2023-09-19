@@ -11,12 +11,13 @@ npm i -D headless-web3-provider
 ```
 
 ## About
+
 The `headless-web3-provider` library emulates a Web3 wallet similar to Metamask and provides programmatic control over various operations, such as switching networks, connecting a wallet, and sending transactions, making it useful for end-to-end testing of Ethereum-based applications. It allows to programmatically accept or decline operations, making it handy for test automation.
 
 #### Supported methods
 
 | Method                     | Confirmable |
-|----------------------------|-------------|
+| -------------------------- | ----------- |
 | eth_requestAccounts        | Yes         |
 | eth_accounts               | Yes         |
 | eth_sendTransaction        | Yes         |
@@ -37,14 +38,14 @@ The `headless-web3-provider` library emulates a Web3 wallet similar to Metamask 
 | eth_chainId                | No          |
 | net_version                | No          |
 
-
 ## Examples
 
-
 ### Playwright
+
 Below given a simple example. More complex scenarios you can find in [tests/e2e](./tests/e2e) folder.
 
 Setup (add a fixture):
+
 ```js
 // tests/fixtures.js
 import { test as base } from '@playwright/test'
@@ -56,19 +57,20 @@ export const test = base.extend({
 
   // injectWeb3Provider - function that injects web3 provider instance into the page
   injectWeb3Provider: async ({ signers }, use) => {
-    await use((page, privateKeys = signers) => (
+    await use((page, privateKeys = signers) =>
       injectHeadlessWeb3Provider(
         page,
-        privateKeys,            // Private keys that you want to use in tests
-        31337,                  // Chain ID - 31337 is common testnet id
+        privateKeys, // Private keys that you want to use in tests
+        31337, // Chain ID - 31337 is common testnet id
         'http://localhost:8545' // Ethereum client's JSON-RPC URL
       )
-    ))
+    )
   },
 })
 ```
 
 Usage:
+
 ```js
 // tests/e2e/example.spec.js
 import { test } from '../fixtures'
@@ -87,31 +89,42 @@ test('connect the wallet', async ({ page, injectWeb3Provider }) => {
 
   // Verify if the wallet is really connected
   await test.expect(page.locator('text=Connected')).toBeVisible()
-  await test.expect(page.locator('text=0x8b3a08b22d25c60e4b2bfd984e331568eca4c299')).toBeVisible()
+  await test
+    .expect(page.locator('text=0x8b3a08b22d25c60e4b2bfd984e331568eca4c299'))
+    .toBeVisible()
 })
 ```
 
 ### Jest
+
 Add a helper script for injecting the ethereum provider instance.
+
 ```ts
 // tests/web3-helper.ts
 import { Wallet } from 'ethers'
-import { makeHeadlessWeb3Provider, Web3ProviderBackend } from 'headless-web3-provider'
+import {
+  makeHeadlessWeb3Provider,
+  Web3ProviderBackend,
+} from 'headless-web3-provider'
 
 /**
  * injectWeb3Provider - Function to create and inject web3 provider instance into the global window object
  *
  * @returns {Array} An array containing the wallets and the web3Provider instance
  */
-export function injectWeb3Provider(): [[Wallet, ...Wallet[]], Web3ProviderBackend] {
-
+export function injectWeb3Provider(): [
+  [Wallet, ...Wallet[]],
+  Web3ProviderBackend
+] {
   // Create 2 random instances of Wallet class
-  const wallets = Array(2).fill(0).map(() => Wallet.createRandom()) as [Wallet, Wallet]
+  const wallets = Array(2)
+    .fill(0)
+    .map(() => Wallet.createRandom()) as [Wallet, Wallet]
 
   // Create an instance of the Web3ProviderBackend class
   let web3Manager: Web3ProviderBackend = makeHeadlessWeb3Provider(
     wallets.map((wallet) => wallet.privateKey),
-    31337,                  // Chain ID - 31337 or  is a common testnet id
+    31337, // Chain ID - 31337 or  is a common testnet id
     'http://localhost:8545' // Ethereum client's JSON-RPC URL
   )
 
@@ -146,8 +159,9 @@ describe('<AccountConnect />', () => {
     render(<AccountConnect />)
 
     // Request connecting the wallet
-    await userEvent.click(screen.getByRole('button', { name: /connect wallet/i }))
-
+    await userEvent.click(
+      screen.getByRole('button', { name: /connect wallet/i })
+    )
 
     // Verify if the wallet is NOT yet connected
     expect(screen.queryByText(wallets[0].address)).not.toBeInTheDocument()
@@ -163,13 +177,11 @@ describe('<AccountConnect />', () => {
 })
 ```
 
-
 ## Additional Tools
 
 Enhance your testing environment with these complementary tools that integrate seamlessly with `headless-web3-provider`:
 
 - [Foundry Anvil](https://book.getfoundry.sh/anvil/) - a dev chain platform ideal for testing your applications against.
-
 
 ## Resources
 
