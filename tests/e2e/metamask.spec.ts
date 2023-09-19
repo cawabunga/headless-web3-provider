@@ -1,6 +1,7 @@
 import { ethers } from 'ethers'
 import { expect, test } from '../fixtures'
 import { Web3ProviderBackend, Web3RequestKind } from '../../src'
+import { Page } from '@playwright/test'
 
 let wallet: Web3ProviderBackend
 
@@ -18,8 +19,8 @@ test('connect the wallet', async ({ page, accounts }) => {
  // Until the wallet is connected, the accounts should be empty
  let ethAccounts = await page.evaluate(() =>
       window.ethereum.request({ method: 'eth_accounts', params: [] })
-  );
-  expect(ethAccounts).toEqual([]);
+  )
+  expect(ethAccounts).toEqual([])
 
   // Request connecting the wallet
   await page.locator('text=Connect').click()
@@ -42,8 +43,8 @@ test('connect the wallet', async ({ page, accounts }) => {
   // After connecting the wallet, the accounts should be available
   ethAccounts = await page.evaluate(() =>
     window.ethereum.request({ method: 'eth_accounts', params: [] })
-  );
-  expect(ethAccounts).toEqual(accounts);
+  )
+  expect(ethAccounts).toEqual(accounts)
 })
 
 test('add a new network', async ({ page }) => {
@@ -101,8 +102,8 @@ test('request permissions', async ({ page, accounts }) => {
 
   const ethAccounts = await page.evaluate(() =>
     window.ethereum.request({ method: 'eth_accounts', params: [] })
-  );
-  expect(ethAccounts).toEqual(accounts);
+  )
+  expect(ethAccounts).toEqual(accounts)
 })
 
 test('deploy a token', async ({ page }) => {
@@ -115,6 +116,42 @@ test('deploy a token', async ({ page }) => {
 
   await wallet.authorize(Web3RequestKind.SendTransaction)
   await expect(page.locator('#tokenAddress')).toContainText(/0x.+/)
+})
+
+const getTransactionCount = async (page: Page, account: string): Promise<number> => {
+  const res = await page.evaluate(addr =>
+    window.ethereum.request({
+      method: 'eth_getTransactionCount',
+      params: [addr, 'latest']
+    }),
+    account
+  )
+  return Number(res)
+}
+
+test('send legacy transaction', async ({ page, accounts }) => {
+  await page.locator('text=Connect').click()
+  await wallet.authorize(Web3RequestKind.RequestAccounts)
+
+  await page.locator('text=Send Legacy Transaction').click()
+  const nonceBefore = await getTransactionCount(page, accounts[0])
+  await wallet.authorize(Web3RequestKind.SendTransaction)
+
+  const nonceAfter = await getTransactionCount(page, accounts[0])
+  expect(nonceAfter).toEqual(nonceBefore+1)
+})
+
+
+test('send EIP-1559 transaction', async ({ page, accounts }) => {
+  await page.locator('text=Connect').click()
+  await wallet.authorize(Web3RequestKind.RequestAccounts)
+
+  await page.locator('text=Send EIP 1559 Transaction').click()
+  const nonceBefore = await getTransactionCount(page, accounts[0])
+  await wallet.authorize(Web3RequestKind.SendTransaction)
+
+  const nonceAfter = await getTransactionCount(page, accounts[0])
+  expect(nonceAfter).toEqual(nonceBefore+1)
 })
 
 /**

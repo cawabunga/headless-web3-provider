@@ -82,12 +82,28 @@ export class Web3ProviderBackend extends EventEmitter implements IWeb3Provider {
     }
 
     switch (method) {
+      case 'eth_blockNumber':
       case 'eth_call':
       case 'eth_estimateGas':
-      case 'eth_blockNumber':
+      case 'eth_gasPrice':
+      case 'eth_getBalance':
+      case 'eth_getBlockByHash':
       case 'eth_getBlockByNumber':
+      case 'eth_getBlockTransactionCountByHash':
+      case 'eth_getBlockTransactionCountByNumber':
+      case 'eth_getCode':
+      case 'eth_getLogs':
+      case 'eth_getStorageAt':
+      case 'eth_getTransactionByBlockHashAndIndex':
+      case 'eth_getTransactionByBlockNumberAndIndex':
       case 'eth_getTransactionByHash':
+      case 'eth_getTransactionCount':
       case 'eth_getTransactionReceipt':
+      case 'eth_getUncleByBlockHashAndIndex':
+      case 'eth_getUncleByBlockNumberAndIndex':
+      case 'eth_getUncleCountByBlockHash':
+      case 'eth_getUncleCountByBlockNumber':
+      case 'eth_sendRawTransaction':
         return this.getRpc().send(method, params)
 
       case 'eth_requestAccounts': {
@@ -127,7 +143,9 @@ export class Web3ProviderBackend extends EventEmitter implements IWeb3Provider {
         return this.waitAuthorization({ method, params }, async () => {
           const wallet = this.#getCurrentWallet()
           const rpc = this.getRpc()
-          const { gas, ...txRequest } = params[0]
+          const jsonRpcTx = params[0]
+
+          const txRequest = convertJsonRpcTxToEthersTxRequest(jsonRpcTx)
           const tx = await wallet.connect(rpc).sendTransaction(txRequest)
           return tx.hash
         })
@@ -387,4 +405,35 @@ function without<T>(list: T[], item: T): T[] {
     return list.slice(0, idx).concat(list.slice(idx + 1))
   }
   return list
+}
+
+// Allowed keys for a JSON-RPC transaction as defined in:
+// https://ethereum.github.io/execution-apis/api-documentation/
+const allowedTransactionKeys =  ['accessList', 'chainId', 'data', 'from', 'gas', 'gasPrice', 'maxFeePerGas',
+  'maxPriorityFeePerGas', 'nonce', 'to', 'type', 'value']
+
+// Convert a JSON-RPC transaction to an ethers.js transaction.
+// The reverse of this function can be found in the ethers.js library:
+// https://github.com/ethers-io/ethers.js/blob/v5.7.2/packages/providers/src.ts/json-rpc-provider.ts#L701
+function convertJsonRpcTxToEthersTxRequest(tx: { [key: string]: any }): ethers.providers.TransactionRequest {
+  const result: any = {}
+
+  allowedTransactionKeys.forEach((key) => {
+    if (tx[key] == null) { return }
+
+    switch (key) {
+      // gasLimit is referred to as "gas" in JSON-RPC
+      case "gas":
+        result['gasLimit'] = tx[key]
+        return
+      // ethers.js expects `chainId` and `type` to be a number
+      case "chainId":
+      case "type":
+        result[key] = Number(tx[key])
+        return
+      default:
+        result[key] = tx[key]
+    }
+  });
+  return result
 }
