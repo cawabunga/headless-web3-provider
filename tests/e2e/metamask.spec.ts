@@ -133,9 +133,8 @@ test('send legacy transaction', async ({ page, accounts }) => {
   await page.locator('text=Connect').click()
   await wallet.authorize(Web3RequestKind.RequestAccounts)
 
-  const nonceBefore = await getTransactionCount(page, accounts[0])
-
   await page.locator('text=Send Legacy Transaction').click()
+  const nonceBefore = await getTransactionCount(page, accounts[0])
   await wallet.authorize(Web3RequestKind.SendTransaction)
 
   const nonceAfter = await getTransactionCount(page, accounts[0])
@@ -147,9 +146,8 @@ test('send EIP-1559 transaction', async ({ page, accounts }) => {
   await page.locator('text=Connect').click()
   await wallet.authorize(Web3RequestKind.RequestAccounts)
 
-  const nonceBefore = await getTransactionCount(page, accounts[0])
-
   await page.locator('text=Send EIP 1559 Transaction').click()
+  const nonceBefore = await getTransactionCount(page, accounts[0])
   await wallet.authorize(Web3RequestKind.SendTransaction)
 
   const nonceAfter = await getTransactionCount(page, accounts[0])

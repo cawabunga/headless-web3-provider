@@ -145,7 +145,7 @@ export class Web3ProviderBackend extends EventEmitter implements IWeb3Provider {
           const rpc = this.getRpc()
           const jsonRpcTx = params[0]
 
-          const txRequest = convertTransaction(jsonRpcTx)
+          const txRequest = convertJsonRpcTxToEthersTxRequest(jsonRpcTx)
           const tx = await wallet.connect(rpc).sendTransaction(txRequest)
           return tx.hash
         })
@@ -415,7 +415,7 @@ const allowedTransactionKeys =  ['accessList', 'chainId', 'data', 'from', 'gas',
 // Convert a JSON-RPC transaction to an ethers.js transaction.
 // The reverse of this function can be found in the ethers.js library:
 // https://github.com/ethers-io/ethers.js/blob/v5.7.2/packages/providers/src.ts/json-rpc-provider.ts#L701
-function convertTransaction(tx: { [key: string]: any }): ethers.providers.TransactionRequest {
+function convertJsonRpcTxToEthersTxRequest(tx: { [key: string]: any }): ethers.providers.TransactionRequest {
   const result: any = {}
 
   allowedTransactionKeys.forEach((key) => {
