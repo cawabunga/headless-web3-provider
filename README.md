@@ -82,7 +82,7 @@ test('connect the wallet', async ({ page, injectWeb3Provider }) => {
   await page.goto('https://metamask.github.io/test-dapp/')
 
   // Request connecting the wallet
-  await page.locator('text=Connect').click()
+  await page.getByRole('button', { name: 'Connect', exact: true }).click()
 
   // You can either authorize or reject the request
   await wallet.authorize(Web3RequestKind.RequestAccounts)

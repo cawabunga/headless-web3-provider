@@ -23,7 +23,7 @@ test('connect the wallet', async ({ page, accounts }) => {
   expect(ethAccounts).toEqual([])
 
   // Request connecting the wallet
-  await page.locator('text=Connect').click()
+  await page.getByRole('button', { name: 'Connect', exact: true }).click()
 
   expect(
     wallet.getPendingRequestCount(Web3RequestKind.RequestAccounts)
@@ -83,7 +83,7 @@ test('switch a new network', async ({ page }) => {
 })
 
 test('request permissions', async ({ page, accounts }) => {
-  await page.locator('text=Connect').click()
+  await page.getByRole('button', { name: 'Connect', exact: true }).click()
   await wallet.authorize(Web3RequestKind.RequestAccounts)
 
   // Request permissions
@@ -107,15 +107,15 @@ test('request permissions', async ({ page, accounts }) => {
 })
 
 test('deploy a token', async ({ page }) => {
-  await page.locator('text=Connect').click()
+  await page.getByRole('button', { name: 'Connect', exact: true }).click()
   await wallet.authorize(Web3RequestKind.RequestAccounts)
 
-  await expect(page.locator('#tokenAddress')).toBeEmpty()
+  await expect(page.locator('#tokenAddresses')).toBeEmpty()
   await page.locator('text=Create Token').click()
-  await expect(page.locator('#tokenAddress')).toBeEmpty()
+  await expect(page.locator('#tokenAddresses')).toBeEmpty()
 
   await wallet.authorize(Web3RequestKind.SendTransaction)
-  await expect(page.locator('#tokenAddress')).toContainText(/0x.+/)
+  await expect(page.locator('#tokenAddresses')).toContainText(/0x.+/)
 })
 
 const getTransactionCount = async (
@@ -134,7 +134,7 @@ const getTransactionCount = async (
 }
 
 test('send legacy transaction', async ({ page, accounts }) => {
-  await page.locator('text=Connect').click()
+  await page.getByRole('button', { name: 'Connect', exact: true }).click()
   await wallet.authorize(Web3RequestKind.RequestAccounts)
 
   await page.locator('text=Send Legacy Transaction').click()
@@ -146,7 +146,7 @@ test('send legacy transaction', async ({ page, accounts }) => {
 })
 
 test('send EIP-1559 transaction', async ({ page, accounts }) => {
-  await page.locator('text=Connect').click()
+  await page.getByRole('button', { name: 'Connect', exact: true }).click()
   await wallet.authorize(Web3RequestKind.RequestAccounts)
 
   await page.locator('text=Send EIP 1559 Transaction').click()
@@ -162,7 +162,7 @@ test('send EIP-1559 transaction', async ({ page, accounts }) => {
  */
 test('sign a message', async ({ page, signers }) => {
   // Establish a connection with the wallet
-  await page.locator('text=Connect').click()
+  await page.getByRole('button', { name: 'Connect', exact: true }).click()
   // Authorize the request for account access
   await wallet.authorize(Web3RequestKind.RequestAccounts)
 
@@ -223,7 +223,7 @@ for (const {
 } of data) {
   test(`sign a typed message (${version})`, async ({ page, signers }) => {
     // Establish a connection with the wallet
-    await page.locator('text=Connect').click()
+    await page.getByRole('button', { name: 'Connect', exact: true }).click()
     // Authorize the request for account access
     await wallet.authorize(Web3RequestKind.RequestAccounts)
 
