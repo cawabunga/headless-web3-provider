@@ -1,10 +1,15 @@
 import { ethers } from 'ethers'
 import { test as base } from '@playwright/test'
-import { injectHeadlessWeb3Provider, Web3ProviderBackend } from '../src'
+import {
+  injectHeadlessWeb3Provider,
+  Web3ProviderBackend,
+  Web3RequestKind,
+} from '../src'
 import { getAnvilInstance } from './services/anvil/anvilPoolClient'
 
 type InjectWeb3Provider = (
-  privateKeys?: string[]
+  privateKeys?: string[],
+  permitted?: (Web3RequestKind | string)[]
 ) => Promise<Web3ProviderBackend>
 
 export const test = base.extend<{
@@ -29,10 +34,12 @@ export const test = base.extend<{
   },
 
   injectWeb3Provider: async ({ page, signers, anvilRpcUrl }, use) => {
-    await use((privateKeys = signers) =>
-      injectHeadlessWeb3Provider(page, privateKeys, 31337, anvilRpcUrl)
+    await use((privateKeys = signers, permitted = []) =>
+      injectHeadlessWeb3Provider(page, privateKeys, 31337, anvilRpcUrl, {
+        permitted,
+      })
     )
   },
 })
 
-export const { expect } = test
+export const { expect, describe } = test
