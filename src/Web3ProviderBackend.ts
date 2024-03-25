@@ -1,14 +1,15 @@
 import assert from 'node:assert/strict'
 import {
-  filter,
-  firstValueFrom,
   BehaviorSubject,
-  switchMap,
-  from,
+  filter,
   first,
+  firstValueFrom,
+  from,
+  switchMap,
   tap,
 } from 'rxjs'
 import { ethers, Wallet } from 'ethers'
+import { toUtf8String } from 'ethers/lib/utils'
 import { signTypedData, SignTypedDataVersion } from '@metamask/eth-sig-util'
 
 import { Web3RequestKind } from './utils'
@@ -22,7 +23,7 @@ import {
 } from './errors'
 import { IWeb3Provider, PendingRequest } from './types'
 import { EventEmitter } from './EventEmitter'
-import { toUtf8String } from 'ethers/lib/utils'
+import { WalletPermissionSystem } from './wallet/WalletPermissionSystem'
 
 interface ChainConnection {
   chainId: number
@@ -32,16 +33,17 @@ interface ChainConnection {
 export interface Web3ProviderConfig {
   debug?: boolean
   logger?: typeof console.log
+  permitted?: (Web3RequestKind | string)[]
 }
 
 export class Web3ProviderBackend extends EventEmitter implements IWeb3Provider {
   #pendingRequests$ = new BehaviorSubject<PendingRequest[]>([])
   #wallets: ethers.Signer[] = []
+  #wps: WalletPermissionSystem
+
   private _activeChainId: number
   private _rpc: Record<number, ethers.providers.JsonRpcProvider> = {}
   private _config: { debug: boolean; logger: typeof console.log }
-  private _authorizedRequests: { [K in Web3RequestKind | string]?: boolean } =
-    {}
 
   constructor(
     privateKeys: string[],
@@ -52,6 +54,7 @@ export class Web3ProviderBackend extends EventEmitter implements IWeb3Provider {
     this.#wallets = privateKeys.map((key) => new ethers.Wallet(key))
     this._activeChainId = chains[0].chainId
     this._config = Object.assign({ debug: false, logger: console.log }, config)
+    this.#wps = new WalletPermissionSystem(config.permitted)
   }
 
   request(args: { method: 'eth_accounts'; params: [] }): Promise<string[]>
@@ -107,23 +110,21 @@ export class Web3ProviderBackend extends EventEmitter implements IWeb3Provider {
         return this.getRpc().send(method, params)
 
       case 'eth_requestAccounts': {
-        return this.waitAuthorization(
-          { method, params },
-          async () => {
-            const accounts = await Promise.all(
-              this.#wallets.map(async (wallet) =>
-                (await wallet.getAddress()).toLowerCase()
-              )
+        return this.waitAuthorization({ method, params }, async () => {
+          this.#wps.permit(Web3RequestKind.Accounts, '')
+
+          const accounts = await Promise.all(
+            this.#wallets.map(async (wallet) =>
+              (await wallet.getAddress()).toLowerCase()
             )
-            this.emit('accountsChanged', accounts)
-            return accounts
-          },
-          true
-        )
+          )
+          this.emit('accountsChanged', accounts)
+          return accounts
+        })
       }
 
       case 'eth_accounts': {
-        if (this._authorizedRequests['eth_requestAccounts']) {
+        if (this.#wps.isPermitted(Web3RequestKind.Accounts, '')) {
           return await Promise.all(
             this.#wallets.map(async (wallet) =>
               (await wallet.getAddress()).toLowerCase()
@@ -175,6 +176,7 @@ export class Web3ProviderBackend extends EventEmitter implements IWeb3Provider {
         })
       }
 
+      // todo: use the Wallet Permissions System (WPS) to handle method
       case 'wallet_requestPermissions': {
         if (params.length === 0 || params[0].eth_accounts === undefined) {
           throw Deny()
@@ -264,10 +266,9 @@ export class Web3ProviderBackend extends EventEmitter implements IWeb3Provider {
 
   waitAuthorization<T>(
     requestInfo: PendingRequest['requestInfo'],
-    task: () => Promise<T>,
-    permanentPermission = false
+    task: () => Promise<T>
   ) {
-    if (this._authorizedRequests[requestInfo.method]) {
+    if (this.#wps.isPermitted(requestInfo.method, '')) {
       return task()
     }
 
@@ -275,10 +276,6 @@ export class Web3ProviderBackend extends EventEmitter implements IWeb3Provider {
       const pendingRequest: PendingRequest = {
         requestInfo: requestInfo,
         authorize: async () => {
-          if (permanentPermission) {
-            this._authorizedRequests[requestInfo.method] = true
-          }
-
           resolve(await task())
         },
         reject(err) {
