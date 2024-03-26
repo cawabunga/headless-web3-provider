@@ -29,6 +29,7 @@
   },
   "dependencies": {
     "@metamask/eth-sig-util": "^6.0.0",
+    "@metamask/json-rpc-engine": "^8.0.1",
     "ethers": "^5.7.1",
     "rxjs": "^7.5.7"
   },
