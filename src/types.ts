@@ -3,7 +3,7 @@ import type { JsonRpcRequest } from '@metamask/utils'
 export interface IWeb3Provider {
   isMetaMask?: boolean
 
-  request(args: JsonRpcRequest): Promise<any>
+  request(args: Pick<JsonRpcRequest, 'method' | 'params'>): Promise<any>
 
   emit(eventName: string, ...args: any[]): void
   on(eventName: string, listener: (eventName: string) => void): void

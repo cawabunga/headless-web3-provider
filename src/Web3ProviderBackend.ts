@@ -79,8 +79,12 @@ export class Web3ProviderBackend extends EventEmitter implements IWeb3Provider {
     )
   }
 
-  async request(req: JsonRpcRequest): Promise<any> {
-    const res = await this.#engine.handle(req)
+  async request(req: Pick<JsonRpcRequest, 'method' | 'params'>): Promise<any> {
+    const res = await this.#engine.handle({
+      id: null,
+      jsonrpc: '2.0',
+      ...req,
+    })
 
     if ('result' in res) {
       return res.result
