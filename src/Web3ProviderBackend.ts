@@ -11,6 +11,11 @@ import {
 import { ethers, Wallet } from 'ethers'
 import { toUtf8String } from 'ethers/lib/utils'
 import { signTypedData, SignTypedDataVersion } from '@metamask/eth-sig-util'
+import {
+  createAsyncMiddleware,
+  type JsonRpcEngine,
+} from '@metamask/json-rpc-engine'
+import type { JsonRpcRequest } from '@metamask/utils'
 
 import { Web3RequestKind } from './utils'
 import {
@@ -24,6 +29,7 @@ import {
 import { IWeb3Provider, PendingRequest } from './types'
 import { EventEmitter } from './EventEmitter'
 import { WalletPermissionSystem } from './wallet/WalletPermissionSystem'
+import { makeRpcEngine } from './jsonRpcEngine'
 
 interface ChainConnection {
   chainId: number
@@ -40,6 +46,7 @@ export class Web3ProviderBackend extends EventEmitter implements IWeb3Provider {
   #pendingRequests$ = new BehaviorSubject<PendingRequest[]>([])
   #wallets: ethers.Signer[] = []
   #wps: WalletPermissionSystem
+  #engine: JsonRpcEngine
 
   private _activeChainId: number
   private _rpc: Record<number, ethers.providers.JsonRpcProvider> = {}
@@ -55,62 +62,44 @@ export class Web3ProviderBackend extends EventEmitter implements IWeb3Provider {
     this._activeChainId = chains[0].chainId
     this._config = Object.assign({ debug: false, logger: console.log }, config)
     this.#wps = new WalletPermissionSystem(config.permitted)
+    this.#engine = makeRpcEngine({
+      debug: this._config.debug,
+      logger: this._config.logger,
+      providerThunk: () => this.getRpc()
+    })
+    this.#engine.push(
+      createAsyncMiddleware(async (req, res, next) => {
+        res.result = await this._request(req)
+      })
+    )
   }
 
-  request(args: { method: 'eth_accounts'; params: [] }): Promise<string[]>
-  request(args: {
-    method: 'eth_requestAccounts'
-    params: string[]
-  }): Promise<string[]>
-  request(args: { method: 'net_version'; params: [] }): Promise<number>
-  request(args: { method: 'eth_chainId'; params: [] }): Promise<string>
-  request(args: { method: 'personal_sign'; params: string[] }): Promise<string>
-  request(args: {
-    method: 'eth_signTypedData' | 'eth_signTypedData_v1'
-    params: [object[], string]
-  }): Promise<string>
-  request(args: {
-    method: 'eth_signTypedData_v3' | 'eth_signTypedData_v4'
-    params: string[]
-  }): Promise<string>
   async request({
     method,
     params,
-  }: {
-    method: string
-    params: any[]
-  }): Promise<any> {
+  }: JsonRpcRequest): Promise<any> {
+    const res = await this.#engine.handle({
+      jsonrpc: '2.0',
+      id: null,
+      method,
+      params,
+    } satisfies JsonRpcRequest)
+
+    if ('result' in res) {
+      return res.result
+    } else {
+      throw res.error
+    }
+  }
+
+  async _request(req: JsonRpcRequest): Promise<any> {
     if (this._config.debug) {
-      this._config.logger({ method, params })
+      this._config.logger('Request: ' + req.method)
     }
 
-    switch (method) {
-      case 'eth_blockNumber':
-      case 'eth_call':
-      case 'eth_estimateGas':
-      case 'eth_gasPrice':
-      case 'eth_getBalance':
-      case 'eth_getBlockByHash':
-      case 'eth_getBlockByNumber':
-      case 'eth_getBlockTransactionCountByHash':
-      case 'eth_getBlockTransactionCountByNumber':
-      case 'eth_getCode':
-      case 'eth_getLogs':
-      case 'eth_getStorageAt':
-      case 'eth_getTransactionByBlockHashAndIndex':
-      case 'eth_getTransactionByBlockNumberAndIndex':
-      case 'eth_getTransactionByHash':
-      case 'eth_getTransactionCount':
-      case 'eth_getTransactionReceipt':
-      case 'eth_getUncleByBlockHashAndIndex':
-      case 'eth_getUncleByBlockNumberAndIndex':
-      case 'eth_getUncleCountByBlockHash':
-      case 'eth_getUncleCountByBlockNumber':
-      case 'eth_sendRawTransaction':
-        return this.getRpc().send(method, params)
-
+    switch (req.method) {
       case 'eth_requestAccounts': {
-        return this.waitAuthorization({ method, params }, async () => {
+        return this.waitAuthorization(req, async () => {
           this.#wps.permit(Web3RequestKind.Accounts, '')
 
           const accounts = await Promise.all(
@@ -145,10 +134,11 @@ export class Web3ProviderBackend extends EventEmitter implements IWeb3Provider {
       }
 
       case 'eth_sendTransaction': {
-        return this.waitAuthorization({ method, params }, async () => {
+        return this.waitAuthorization(req, async () => {
           const wallet = this.#getCurrentWallet()
           const rpc = this.getRpc()
-          const jsonRpcTx = params[0]
+          // @ts-expect-error todo: parse params
+          const jsonRpcTx = req.params[0]
 
           const txRequest = convertJsonRpcTxToEthersTxRequest(jsonRpcTx)
           const tx = await wallet.connect(rpc).sendTransaction(txRequest)
@@ -157,20 +147,24 @@ export class Web3ProviderBackend extends EventEmitter implements IWeb3Provider {
       }
 
       case 'wallet_addEthereumChain': {
-        return this.waitAuthorization({ method, params }, async () => {
-          const chainId = Number(params[0].chainId)
-          const rpcUrl = params[0].rpcUrls[0]
+        return this.waitAuthorization(req, async () => {
+          // @ts-expect-error todo: parse params
+          const chainId = Number(req.params[0].chainId)
+          // @ts-expect-error todo: parse params
+          const rpcUrl = req.params[0].rpcUrls[0]
           this.addNetwork(chainId, rpcUrl)
           return null
         })
       }
 
       case 'wallet_switchEthereumChain': {
-        if (this._activeChainId === Number(params[0].chainId)) {
+        // @ts-expect-error todo: parse params
+        if (this._activeChainId === Number(req.params[0].chainId)) {
           return null
         }
-        return this.waitAuthorization({ method, params }, async () => {
-          const chainId = Number(params[0].chainId)
+        return this.waitAuthorization(req, async () => {
+          // @ts-expect-error todo: parse params
+          const chainId = Number(req.params[0].chainId)
           this.switchNetwork(chainId)
           return null
         })
@@ -178,11 +172,12 @@ export class Web3ProviderBackend extends EventEmitter implements IWeb3Provider {
 
       // todo: use the Wallet Permissions System (WPS) to handle method
       case 'wallet_requestPermissions': {
-        if (params.length === 0 || params[0].eth_accounts === undefined) {
+        // @ts-expect-error todo: parse params
+        if (req.params.length === 0 || req.params[0].eth_accounts === undefined) {
           throw Deny()
         }
 
-        return this.waitAuthorization({ method, params }, async () => {
+        return this.waitAuthorization(req, async () => {
           const accounts = await Promise.all(
             this.#wallets.map(async (wallet) =>
               (await wallet.getAddress()).toLowerCase()
@@ -194,11 +189,13 @@ export class Web3ProviderBackend extends EventEmitter implements IWeb3Provider {
       }
 
       case 'personal_sign': {
-        return this.waitAuthorization({ method, params }, async () => {
+        return this.waitAuthorization(req, async () => {
           const wallet = this.#getCurrentWallet()
           const address = await wallet.getAddress()
-          assert.equal(address, ethers.utils.getAddress(params[1]))
-          const message = toUtf8String(params[0])
+          // @ts-expect-error todo: parse params
+          assert.equal(address, ethers.utils.getAddress(req.params[1]))
+          // @ts-expect-error todo: parse params
+          const message = toUtf8String(req.params[0])
 
           const signature = await wallet.signMessage(message)
           if (this._config.debug) {
@@ -214,12 +211,14 @@ export class Web3ProviderBackend extends EventEmitter implements IWeb3Provider {
 
       case 'eth_signTypedData':
       case 'eth_signTypedData_v1': {
-        return this.waitAuthorization({ method, params }, async () => {
+        return this.waitAuthorization(req, async () => {
           const wallet = this.#getCurrentWallet() as Wallet
           const address = await wallet.getAddress()
-          assert.equal(address, ethers.utils.getAddress(params[1]))
+          // @ts-expect-error todo: parse params
+          assert.equal(address, ethers.utils.getAddress(req.params[1]))
 
-          const msgParams = params[0]
+          // @ts-expect-error todo: parse params
+          const msgParams = req.params[0]
 
           return signTypedData({
             privateKey: Buffer.from(wallet.privateKey.slice(2), 'hex'),
@@ -231,18 +230,20 @@ export class Web3ProviderBackend extends EventEmitter implements IWeb3Provider {
 
       case 'eth_signTypedData_v3':
       case 'eth_signTypedData_v4': {
-        return this.waitAuthorization({ method, params }, async () => {
+        return this.waitAuthorization(req, async () => {
           const wallet = this.#getCurrentWallet() as Wallet
           const address = await wallet.getAddress()
-          assert.equal(address, ethers.utils.getAddress(params[0]))
+          // @ts-expect-error todo: parse params
+          assert.equal(address, ethers.utils.getAddress(req.params[0]))
 
-          const msgParams = JSON.parse(params[1])
+          // @ts-expect-error todo: parse params
+          const msgParams = JSON.parse(req.params[1])
 
           return signTypedData({
             privateKey: Buffer.from(wallet.privateKey.slice(2), 'hex'),
             data: msgParams,
             version:
-              method === 'eth_signTypedData_v4'
+              req.method === 'eth_signTypedData_v4'
                 ? SignTypedDataVersion.V4
                 : SignTypedDataVersion.V3,
           })

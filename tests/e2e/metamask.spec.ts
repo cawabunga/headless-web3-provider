@@ -18,7 +18,12 @@ test.beforeEach(async ({ page, injectWeb3Provider }) => {
 test('connect the wallet', async ({ page, accounts }) => {
   // Until the wallet is connected, the accounts should be empty
   let ethAccounts = await page.evaluate(() =>
-    window.ethereum.request({ method: 'eth_accounts', params: [] })
+    window.ethereum.request({
+      id: null,
+      jsonrpc: '2.0',
+      method: 'eth_accounts',
+      params: [],
+    })
   )
   expect(ethAccounts).toEqual([])
 
@@ -42,7 +47,12 @@ test('connect the wallet', async ({ page, accounts }) => {
 
   // After connecting the wallet, the accounts should be available
   ethAccounts = await page.evaluate(() =>
-    window.ethereum.request({ method: 'eth_accounts', params: [] })
+    window.ethereum.request({
+      id: null,
+      jsonrpc: '2.0',
+      method: 'eth_accounts',
+      params: [],
+    })
   )
   expect(ethAccounts).toEqual(accounts)
 })
@@ -61,8 +71,18 @@ test('switch a new network', async ({ page }) => {
 
   const [prevNetworkId, prevChainId] = await page.evaluate(() =>
     Promise.all([
-      window.ethereum.request({ method: 'net_version', params: [] }),
-      window.ethereum.request({ method: 'eth_chainId', params: [] }),
+      window.ethereum.request({
+        id: null,
+        jsonrpc: '2.0',
+        method: 'net_version',
+        params: [],
+      }),
+      window.ethereum.request({
+        id: null,
+        jsonrpc: '2.0',
+        method: 'eth_chainId',
+        params: [],
+      }),
     ])
   )
 
@@ -71,8 +91,18 @@ test('switch a new network', async ({ page }) => {
 
   const [newNetworkId, newChainId] = await page.evaluate(() =>
     Promise.all([
-      window.ethereum.request({ method: 'net_version', params: [] }),
-      window.ethereum.request({ method: 'eth_chainId', params: [] }),
+      window.ethereum.request({
+        id: null,
+        jsonrpc: '2.0',
+        method: 'net_version',
+        params: [],
+      }),
+      window.ethereum.request({
+        id: null,
+        jsonrpc: '2.0',
+        method: 'eth_chainId',
+        params: [],
+      }),
     ])
   )
 
@@ -101,7 +131,12 @@ test('request permissions', async ({ page, accounts }) => {
   ).toEqual(0)
 
   const ethAccounts = await page.evaluate(() =>
-    window.ethereum.request({ method: 'eth_accounts', params: [] })
+    window.ethereum.request({
+      id: null,
+      jsonrpc: '2.0',
+      method: 'eth_accounts',
+      params: [],
+    })
   )
   expect(ethAccounts).toEqual(accounts)
 })
@@ -125,6 +160,8 @@ const getTransactionCount = async (
   const res = await page.evaluate(
     (addr) =>
       window.ethereum.request({
+        id: null,
+        jsonrpc: '2.0',
         method: 'eth_getTransactionCount',
         params: [addr, 'latest'],
       }),
