@@ -64,9 +64,12 @@ export class Web3ProviderBackend extends EventEmitter implements IWeb3Provider {
     this.#wps = new WalletPermissionSystem(config.permitted)
     this.#engine = makeRpcEngine({
       debug: this._config.debug,
+      emit: (eventName, ...args) => this.emit(eventName, ...args),
       logger: this._config.logger,
       providerThunk: () => this.getRpc(),
+      walletsThunk: () => this.#wallets,
       waitAuthorization: (req, task) => this.waitAuthorization(req, task),
+      wps: this.#wps,
     })
     this.#engine.push(
       createAsyncMiddleware(async (req, res, next) => {
@@ -95,29 +98,6 @@ export class Web3ProviderBackend extends EventEmitter implements IWeb3Provider {
 
   async _request(req: JsonRpcRequest): Promise<any> {
     switch (req.method) {
-      case 'eth_requestAccounts': {
-        this.#wps.permit(Web3RequestKind.Accounts, '')
-
-        const accounts = await Promise.all(
-          this.#wallets.map(async (wallet) =>
-            (await wallet.getAddress()).toLowerCase()
-          )
-        )
-        this.emit('accountsChanged', accounts)
-        return accounts
-      }
-
-      case 'eth_accounts': {
-        if (this.#wps.isPermitted(Web3RequestKind.Accounts, '')) {
-          return await Promise.all(
-            this.#wallets.map(async (wallet) =>
-              (await wallet.getAddress()).toLowerCase()
-            )
-          )
-        }
-        return []
-      }
-
       case 'eth_chainId': {
         const { chainId } = this.getCurrentChain()
         return '0x' + chainId.toString(16)
