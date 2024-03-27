@@ -1,4 +1,3 @@
-import assert from 'node:assert/strict'
 import {
   BehaviorSubject,
   filter,
@@ -9,12 +8,7 @@ import {
   tap,
 } from 'rxjs'
 import { ethers, Wallet } from 'ethers'
-import { toUtf8String } from 'ethers/lib/utils'
-import { signTypedData, SignTypedDataVersion } from '@metamask/eth-sig-util'
-import {
-  createAsyncMiddleware,
-  type JsonRpcEngine,
-} from '@metamask/json-rpc-engine'
+import { type JsonRpcEngine } from '@metamask/json-rpc-engine'
 import type { JsonRpcRequest } from '@metamask/utils'
 
 import { Web3RequestKind } from './utils'
@@ -24,17 +18,11 @@ import {
   Disconnected,
   ErrorWithCode,
   Unauthorized,
-  UnsupportedMethod,
 } from './errors'
-import { IWeb3Provider, PendingRequest } from './types'
+import { ChainConnection, IWeb3Provider, PendingRequest } from './types'
 import { EventEmitter } from './EventEmitter'
 import { WalletPermissionSystem } from './wallet/WalletPermissionSystem'
 import { makeRpcEngine } from './jsonRpcEngine'
-
-interface ChainConnection {
-  chainId: number
-  rpcUrl: string
-}
 
 export interface Web3ProviderConfig {
   debug?: boolean
@@ -63,20 +51,18 @@ export class Web3ProviderBackend extends EventEmitter implements IWeb3Provider {
     this._config = Object.assign({ debug: false, logger: console.log }, config)
     this.#wps = new WalletPermissionSystem(config.permitted)
     this.#engine = makeRpcEngine({
+      addNetwork: (chainId, rpcUrl) => this.addNetwork(chainId, rpcUrl),
+      currentChainThunk: () => this.getCurrentChain(),
       debug: this._config.debug,
+      emit: (eventName, ...args) => this.emit(eventName, ...args),
       logger: this._config.logger,
       providerThunk: () => this.getRpc(),
+      switchNetwork: (chainId) => this.switchNetwork(chainId),
+      walletThunk: () => this.#getCurrentWallet() as Wallet,
+      walletsThunk: () => this.#wallets,
       waitAuthorization: (req, task) => this.waitAuthorization(req, task),
+      wps: this.#wps,
     })
-    this.#engine.push(
-      createAsyncMiddleware(async (req, res, next) => {
-        try {
-          res.result = await this._request(req)
-        } catch (err) {
-          res.error = err as any
-        }
-      })
-    )
   }
 
   async request(req: Pick<JsonRpcRequest, 'method' | 'params'>): Promise<any> {
@@ -90,158 +76,6 @@ export class Web3ProviderBackend extends EventEmitter implements IWeb3Provider {
       return res.result
     } else {
       throw res.error
-    }
-  }
-
-  async _request(req: JsonRpcRequest): Promise<any> {
-    switch (req.method) {
-      case 'eth_requestAccounts': {
-        this.#wps.permit(Web3RequestKind.Accounts, '')
-
-        const accounts = await Promise.all(
-          this.#wallets.map(async (wallet) =>
-            (await wallet.getAddress()).toLowerCase()
-          )
-        )
-        this.emit('accountsChanged', accounts)
-        return accounts
-      }
-
-      case 'eth_accounts': {
-        if (this.#wps.isPermitted(Web3RequestKind.Accounts, '')) {
-          return await Promise.all(
-            this.#wallets.map(async (wallet) =>
-              (await wallet.getAddress()).toLowerCase()
-            )
-          )
-        }
-        return []
-      }
-
-      case 'eth_chainId': {
-        const { chainId } = this.getCurrentChain()
-        return '0x' + chainId.toString(16)
-      }
-
-      case 'net_version': {
-        const { chainId } = this.getCurrentChain()
-        return chainId
-      }
-
-      case 'eth_sendTransaction': {
-        const wallet = this.#getCurrentWallet()
-        const rpc = this.getRpc()
-        // @ts-expect-error todo: parse params
-        const jsonRpcTx = req.params[0]
-
-        const txRequest = convertJsonRpcTxToEthersTxRequest(jsonRpcTx)
-        try {
-          const tx = await wallet.connect(rpc).sendTransaction(txRequest)
-          return tx.hash
-        } catch (err) {
-          throw err
-        }
-      }
-
-      case 'wallet_addEthereumChain': {
-        // @ts-expect-error todo: parse params
-        const chainId = Number(req.params[0].chainId)
-        // @ts-expect-error todo: parse params
-        const rpcUrl = req.params[0].rpcUrls[0]
-        this.addNetwork(chainId, rpcUrl)
-        return null
-      }
-
-      case 'wallet_switchEthereumChain': {
-        // @ts-expect-error todo: parse params
-        if (this._activeChainId === Number(req.params[0].chainId)) {
-          return null
-        }
-
-        // @ts-expect-error todo: parse params
-        const chainId = Number(req.params[0].chainId)
-        this.switchNetwork(chainId)
-        return null
-      }
-
-      // todo: use the Wallet Permissions System (WPS) to handle method
-      case 'wallet_requestPermissions': {
-        if (
-          // @ts-expect-error todo: parse params
-          req.params.length === 0 ||
-          // @ts-expect-error todo: parse params
-          req.params[0].eth_accounts === undefined
-        ) {
-          throw Deny()
-        }
-
-        const accounts = await Promise.all(
-          this.#wallets.map(async (wallet) =>
-            (await wallet.getAddress()).toLowerCase()
-          )
-        )
-        this.emit('accountsChanged', accounts)
-        return [{ parentCapability: 'eth_accounts' }]
-      }
-
-      case 'personal_sign': {
-        const wallet = this.#getCurrentWallet()
-        const address = await wallet.getAddress()
-        // @ts-expect-error todo: parse params
-        assert.equal(address, ethers.utils.getAddress(req.params[1]))
-        // @ts-expect-error todo: parse params
-        const message = toUtf8String(req.params[0])
-
-        const signature = await wallet.signMessage(message)
-        if (this._config.debug) {
-          this._config.logger('personal_sign', {
-            message,
-            signature,
-          })
-        }
-
-        return signature
-      }
-
-      case 'eth_signTypedData':
-      case 'eth_signTypedData_v1': {
-        const wallet = this.#getCurrentWallet() as Wallet
-        const address = await wallet.getAddress()
-        // @ts-expect-error todo: parse params
-        assert.equal(address, ethers.utils.getAddress(req.params[1]))
-
-        // @ts-expect-error todo: parse params
-        const msgParams = req.params[0]
-
-        return signTypedData({
-          privateKey: Buffer.from(wallet.privateKey.slice(2), 'hex'),
-          data: msgParams,
-          version: SignTypedDataVersion.V1,
-        })
-      }
-
-      case 'eth_signTypedData_v3':
-      case 'eth_signTypedData_v4': {
-        const wallet = this.#getCurrentWallet() as Wallet
-        const address = await wallet.getAddress()
-        // @ts-expect-error todo: parse params
-        assert.equal(address, ethers.utils.getAddress(req.params[0]))
-
-        // @ts-expect-error todo: parse params
-        const msgParams = JSON.parse(req.params[1])
-
-        return signTypedData({
-          privateKey: Buffer.from(wallet.privateKey.slice(2), 'hex'),
-          data: msgParams,
-          version:
-            req.method === 'eth_signTypedData_v4'
-              ? SignTypedDataVersion.V4
-              : SignTypedDataVersion.V3,
-        })
-      }
-
-      default:
-        throw UnsupportedMethod()
     }
   }
 
@@ -400,51 +234,4 @@ function without<T>(list: T[], item: T): T[] {
     return list.slice(0, idx).concat(list.slice(idx + 1))
   }
   return list
-}
-
-// Allowed keys for a JSON-RPC transaction as defined in:
-// https://ethereum.github.io/execution-apis/api-documentation/
-const allowedTransactionKeys = [
-  'accessList',
-  'chainId',
-  'data',
-  'from',
-  'gas',
-  'gasPrice',
-  'maxFeePerGas',
-  'maxPriorityFeePerGas',
-  'nonce',
-  'to',
-  'type',
-  'value',
-]
-
-// Convert a JSON-RPC transaction to an ethers.js transaction.
-// The reverse of this function can be found in the ethers.js library:
-// https://github.com/ethers-io/ethers.js/blob/v5.7.2/packages/providers/src.ts/json-rpc-provider.ts#L701
-function convertJsonRpcTxToEthersTxRequest(tx: {
-  [key: string]: any
-}): ethers.providers.TransactionRequest {
-  const result: any = {}
-
-  allowedTransactionKeys.forEach((key) => {
-    if (tx[key] == null) {
-      return
-    }
-
-    switch (key) {
-      // gasLimit is referred to as "gas" in JSON-RPC
-      case 'gas':
-        result['gasLimit'] = tx[key]
-        return
-      // ethers.js expects `chainId` and `type` to be a number
-      case 'chainId':
-      case 'type':
-        result[key] = Number(tx[key])
-        return
-      default:
-        result[key] = tx[key]
-    }
-  })
-  return result
 }
