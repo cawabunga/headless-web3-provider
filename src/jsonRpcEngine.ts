@@ -8,6 +8,7 @@ import { makeAccountsMiddleware } from './wallet/AccountsMiddleware'
 import { WalletPermissionSystem } from './wallet/WalletPermissionSystem'
 import { makeSignMessageMiddleware } from './wallet/SignMessageMiddleware'
 import { makeNetworkMiddleware } from './wallet/NetworkMiddleware'
+import { makeTransactionMiddleware } from './wallet/TransactionMiddleware'
 
 export function makeRpcEngine({
   addNetwork,
@@ -51,6 +52,7 @@ export function makeRpcEngine({
   engine.push(
     makeNetworkMiddleware(currentChainThunk, addNetwork, switchNetwork)
   )
+  engine.push(makeTransactionMiddleware(providerThunk, walletThunk))
   engine.push(makePassThroughMiddleware(providerThunk))
 
   return engine
