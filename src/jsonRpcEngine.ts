@@ -1,6 +1,7 @@
 import { JsonRpcEngine } from '@metamask/json-rpc-engine'
 import type { JsonRpcRequest } from '@metamask/utils'
 import type { ethers } from 'ethers'
+import { UnsupportedMethod } from './errors'
 import type { ChainConnection } from './types'
 import { makePassThroughMiddleware } from './wallet/PassthroughMiddleware'
 import { makeAuthorizeMiddleware } from './wallet/AuthorizeMiddleware'
@@ -56,6 +57,11 @@ export function makeRpcEngine({
   engine.push(makeTransactionMiddleware(providerThunk, walletThunk))
   engine.push(makePermissionMiddleware(emit, walletsThunk))
   engine.push(makePassThroughMiddleware(providerThunk))
+
+  // Catch unhandled methods
+  engine.push((req, res, next, end) => {
+    end(UnsupportedMethod())
+  })
 
   return engine
 }

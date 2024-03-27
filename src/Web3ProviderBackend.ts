@@ -8,10 +8,7 @@ import {
   tap,
 } from 'rxjs'
 import { ethers, Wallet } from 'ethers'
-import {
-  createAsyncMiddleware,
-  type JsonRpcEngine,
-} from '@metamask/json-rpc-engine'
+import { type JsonRpcEngine } from '@metamask/json-rpc-engine'
 import type { JsonRpcRequest } from '@metamask/utils'
 
 import { Web3RequestKind } from './utils'
@@ -21,7 +18,6 @@ import {
   Disconnected,
   ErrorWithCode,
   Unauthorized,
-  UnsupportedMethod,
 } from './errors'
 import { ChainConnection, IWeb3Provider, PendingRequest } from './types'
 import { EventEmitter } from './EventEmitter'
@@ -67,15 +63,6 @@ export class Web3ProviderBackend extends EventEmitter implements IWeb3Provider {
       waitAuthorization: (req, task) => this.waitAuthorization(req, task),
       wps: this.#wps,
     })
-    this.#engine.push(
-      createAsyncMiddleware(async (req, res, next) => {
-        try {
-          res.result = await this._request(req)
-        } catch (err) {
-          res.error = err as any
-        }
-      })
-    )
   }
 
   async request(req: Pick<JsonRpcRequest, 'method' | 'params'>): Promise<any> {
@@ -90,10 +77,6 @@ export class Web3ProviderBackend extends EventEmitter implements IWeb3Provider {
     } else {
       throw res.error
     }
-  }
-
-  async _request(req: JsonRpcRequest): Promise<any> {
-    throw UnsupportedMethod()
   }
 
   #getCurrentWallet(): ethers.Signer {
