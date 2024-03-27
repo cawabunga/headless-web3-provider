@@ -93,30 +93,7 @@ export class Web3ProviderBackend extends EventEmitter implements IWeb3Provider {
   }
 
   async _request(req: JsonRpcRequest): Promise<any> {
-    switch (req.method) {
-      // todo: use the Wallet Permissions System (WPS) to handle method
-      case 'wallet_requestPermissions': {
-        if (
-          // @ts-expect-error todo: parse params
-          req.params.length === 0 ||
-          // @ts-expect-error todo: parse params
-          req.params[0].eth_accounts === undefined
-        ) {
-          throw Deny()
-        }
-
-        const accounts = await Promise.all(
-          this.#wallets.map(async (wallet) =>
-            (await wallet.getAddress()).toLowerCase()
-          )
-        )
-        this.emit('accountsChanged', accounts)
-        return [{ parentCapability: 'eth_accounts' }]
-      }
-
-      default:
-        throw UnsupportedMethod()
-    }
+    throw UnsupportedMethod()
   }
 
   #getCurrentWallet(): ethers.Signer {
