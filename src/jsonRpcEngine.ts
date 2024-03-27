@@ -5,12 +5,14 @@ import { makePassThroughMiddleware } from './wallet/PassthroughMiddleware'
 import { makeAuthorizeMiddleware } from './wallet/AuthorizeMiddleware'
 import { makeAccountsMiddleware } from './wallet/AccountsMiddleware'
 import { WalletPermissionSystem } from './wallet/WalletPermissionSystem'
+import { makeSignMessageMiddleware } from './wallet/SignMessageMiddleware'
 
 export function makeRpcEngine({
   debug,
   logger,
   emit,
   providerThunk,
+  walletThunk,
   walletsThunk,
   waitAuthorization,
   wps,
@@ -19,6 +21,7 @@ export function makeRpcEngine({
   emit: (eventName: string, ...args: any[]) => void
   logger?: (message: string) => void
   providerThunk: () => ethers.providers.JsonRpcProvider
+  walletThunk: () => ethers.Wallet
   walletsThunk: () => ethers.Signer[]
   waitAuthorization: (
     req: JsonRpcRequest,
@@ -36,6 +39,7 @@ export function makeRpcEngine({
 
   engine.push(makeAuthorizeMiddleware(waitAuthorization))
   engine.push(makeAccountsMiddleware(emit, walletsThunk, wps))
+  engine.push(makeSignMessageMiddleware(walletThunk))
   engine.push(makePassThroughMiddleware(providerThunk))
 
   return engine

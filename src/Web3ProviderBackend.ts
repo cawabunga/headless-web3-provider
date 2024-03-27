@@ -1,4 +1,3 @@
-import assert from 'node:assert/strict'
 import {
   BehaviorSubject,
   filter,
@@ -9,8 +8,6 @@ import {
   tap,
 } from 'rxjs'
 import { ethers, Wallet } from 'ethers'
-import { toUtf8String } from 'ethers/lib/utils'
-import { signTypedData, SignTypedDataVersion } from '@metamask/eth-sig-util'
 import {
   createAsyncMiddleware,
   type JsonRpcEngine,
@@ -67,6 +64,7 @@ export class Web3ProviderBackend extends EventEmitter implements IWeb3Provider {
       emit: (eventName, ...args) => this.emit(eventName, ...args),
       logger: this._config.logger,
       providerThunk: () => this.getRpc(),
+      walletThunk: () => this.#getCurrentWallet() as Wallet,
       walletsThunk: () => this.#wallets,
       waitAuthorization: (req, task) => this.waitAuthorization(req, task),
       wps: this.#wps,
@@ -162,62 +160,6 @@ export class Web3ProviderBackend extends EventEmitter implements IWeb3Provider {
         )
         this.emit('accountsChanged', accounts)
         return [{ parentCapability: 'eth_accounts' }]
-      }
-
-      case 'personal_sign': {
-        const wallet = this.#getCurrentWallet()
-        const address = await wallet.getAddress()
-        // @ts-expect-error todo: parse params
-        assert.equal(address, ethers.utils.getAddress(req.params[1]))
-        // @ts-expect-error todo: parse params
-        const message = toUtf8String(req.params[0])
-
-        const signature = await wallet.signMessage(message)
-        if (this._config.debug) {
-          this._config.logger('personal_sign', {
-            message,
-            signature,
-          })
-        }
-
-        return signature
-      }
-
-      case 'eth_signTypedData':
-      case 'eth_signTypedData_v1': {
-        const wallet = this.#getCurrentWallet() as Wallet
-        const address = await wallet.getAddress()
-        // @ts-expect-error todo: parse params
-        assert.equal(address, ethers.utils.getAddress(req.params[1]))
-
-        // @ts-expect-error todo: parse params
-        const msgParams = req.params[0]
-
-        return signTypedData({
-          privateKey: Buffer.from(wallet.privateKey.slice(2), 'hex'),
-          data: msgParams,
-          version: SignTypedDataVersion.V1,
-        })
-      }
-
-      case 'eth_signTypedData_v3':
-      case 'eth_signTypedData_v4': {
-        const wallet = this.#getCurrentWallet() as Wallet
-        const address = await wallet.getAddress()
-        // @ts-expect-error todo: parse params
-        assert.equal(address, ethers.utils.getAddress(req.params[0]))
-
-        // @ts-expect-error todo: parse params
-        const msgParams = JSON.parse(req.params[1])
-
-        return signTypedData({
-          privateKey: Buffer.from(wallet.privateKey.slice(2), 'hex'),
-          data: msgParams,
-          version:
-            req.method === 'eth_signTypedData_v4'
-              ? SignTypedDataVersion.V4
-              : SignTypedDataVersion.V3,
-        })
       }
 
       default:
