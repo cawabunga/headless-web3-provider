@@ -23,15 +23,10 @@ import {
   Unauthorized,
   UnsupportedMethod,
 } from './errors'
-import { IWeb3Provider, PendingRequest } from './types'
+import { ChainConnection, IWeb3Provider, PendingRequest } from './types'
 import { EventEmitter } from './EventEmitter'
 import { WalletPermissionSystem } from './wallet/WalletPermissionSystem'
 import { makeRpcEngine } from './jsonRpcEngine'
-
-interface ChainConnection {
-  chainId: number
-  rpcUrl: string
-}
 
 export interface Web3ProviderConfig {
   debug?: boolean
@@ -60,10 +55,13 @@ export class Web3ProviderBackend extends EventEmitter implements IWeb3Provider {
     this._config = Object.assign({ debug: false, logger: console.log }, config)
     this.#wps = new WalletPermissionSystem(config.permitted)
     this.#engine = makeRpcEngine({
+      addNetwork: (chainId, rpcUrl) => this.addNetwork(chainId, rpcUrl),
+      currentChainThunk: () => this.getCurrentChain(),
       debug: this._config.debug,
       emit: (eventName, ...args) => this.emit(eventName, ...args),
       logger: this._config.logger,
       providerThunk: () => this.getRpc(),
+      switchNetwork: (chainId) => this.switchNetwork(chainId),
       walletThunk: () => this.#getCurrentWallet() as Wallet,
       walletsThunk: () => this.#wallets,
       waitAuthorization: (req, task) => this.waitAuthorization(req, task),
@@ -96,16 +94,6 @@ export class Web3ProviderBackend extends EventEmitter implements IWeb3Provider {
 
   async _request(req: JsonRpcRequest): Promise<any> {
     switch (req.method) {
-      case 'eth_chainId': {
-        const { chainId } = this.getCurrentChain()
-        return '0x' + chainId.toString(16)
-      }
-
-      case 'net_version': {
-        const { chainId } = this.getCurrentChain()
-        return chainId
-      }
-
       case 'eth_sendTransaction': {
         const wallet = this.#getCurrentWallet()
         const rpc = this.getRpc()
@@ -119,27 +107,6 @@ export class Web3ProviderBackend extends EventEmitter implements IWeb3Provider {
         } catch (err) {
           throw err
         }
-      }
-
-      case 'wallet_addEthereumChain': {
-        // @ts-expect-error todo: parse params
-        const chainId = Number(req.params[0].chainId)
-        // @ts-expect-error todo: parse params
-        const rpcUrl = req.params[0].rpcUrls[0]
-        this.addNetwork(chainId, rpcUrl)
-        return null
-      }
-
-      case 'wallet_switchEthereumChain': {
-        // @ts-expect-error todo: parse params
-        if (this._activeChainId === Number(req.params[0].chainId)) {
-          return null
-        }
-
-        // @ts-expect-error todo: parse params
-        const chainId = Number(req.params[0].chainId)
-        this.switchNetwork(chainId)
-        return null
       }
 
       // todo: use the Wallet Permissions System (WPS) to handle method

@@ -14,3 +14,8 @@ export interface PendingRequest {
   reject: (err: { message?: string; code?: number }) => void
   authorize: () => Promise<void>
 }
+
+export interface ChainConnection {
+  chainId: number
+  rpcUrl: string
+}
