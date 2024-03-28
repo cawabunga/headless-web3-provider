@@ -1,6 +1,6 @@
 # Headless Web3 Provider
 
-[![Playwright Tests](https://github.com/cawabunga/headless-web3-provider/actions/workflows/playwright.yml/badge.svg)](https://github.com/cawabunga/headless-web3-provider/actions/workflows/playwright.yml)
+[![Playwright Tests](https://github.com/cawabunga/headless-web3-provider/actions/workflows/playwright.yml/badge.svg)](https://github.com/cawabunga/headless-web3-provider/actions/workflows/playwright.yml) ![NPM Downloads](https://img.shields.io/npm/dw/headless-web3-provider)
 
 Upgrade your E2E tests with `headless-web3-provider` - the Metamask replacement for Ethereum-based apps. No visual interface needed, control transactions directly from your code!
 
