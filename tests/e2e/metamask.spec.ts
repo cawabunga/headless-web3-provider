@@ -1,4 +1,3 @@
-import { ethers } from 'ethers'
 import { expect, test } from '../fixtures'
 import { Web3ProviderBackend, Web3RequestKind } from '../../src'
 import { Page } from '@playwright/test'

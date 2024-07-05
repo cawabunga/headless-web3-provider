@@ -1,8 +1,0 @@
-/node_modules
-
-# Ignore artifacts:
-/dist
-/.parcel-cache
-
-# Ignore configs:
-/tsconfig.json

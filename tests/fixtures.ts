@@ -1,11 +1,12 @@
-import { ethers } from 'ethers'
 import { test as base } from '@playwright/test'
 import {
   injectHeadlessWeb3Provider,
   Web3ProviderBackend,
   Web3RequestKind,
 } from '../src'
+import {privateKeyToAddress} from 'viem/accounts'
 import { getAnvilInstance } from './services/anvil/anvilPoolClient'
+import { Address, Hex } from 'viem'
 
 type InjectWeb3Provider = (
   privateKeys?: string[],
@@ -13,8 +14,8 @@ type InjectWeb3Provider = (
 ) => Promise<Web3ProviderBackend>
 
 export const test = base.extend<{
-  signers: [string, ...string[]]
-  accounts: string[]
+  signers: [Hex, ...Hex[]]
+  accounts: Address[]
   injectWeb3Provider: InjectWeb3Provider
   anvilRpcUrl: string
 }>({
@@ -24,7 +25,7 @@ export const test = base.extend<{
   ],
 
   accounts: async ({ signers }, use) => {
-    await use(signers.map((k) => new ethers.Wallet(k).address.toLowerCase()))
+    await use(signers.map((k) => privateKeyToAddress(k)))
   },
 
   anvilRpcUrl: async ({}, use) => {

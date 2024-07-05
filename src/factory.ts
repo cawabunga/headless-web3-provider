@@ -1,5 +1,4 @@
-import { ethers } from 'ethers'
-import { IWeb3Provider } from './types'
+import type { IWeb3Provider } from './types'
 import { EventEmitter } from './EventEmitter'
 import { Web3ProviderBackend, Web3ProviderConfig } from './Web3ProviderBackend'
 
@@ -15,7 +14,6 @@ export function makeHeadlessWeb3Provider(
   ) => Promise<void> = async () => {},
   config?: Web3ProviderConfig
 ) {
-  const chainRpc = new ethers.providers.JsonRpcProvider(rpcUrl, chainId)
   const web3Provider = new Web3ProviderBackend(
     privateKeys,
     [{ chainId, rpcUrl }],
