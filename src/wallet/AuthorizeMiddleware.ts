@@ -40,7 +40,7 @@ export function makeAuthorizeMiddleware(
 				// This ensures that the method is both authorized and executed as expected.
 				await waitAuthorization(req as JsonRpcRequest, next)
 			} else {
-				void next()
+				next()
 			}
 		})
 

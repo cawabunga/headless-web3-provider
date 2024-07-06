@@ -1,4 +1,10 @@
-import { http, type Account, type Chain, type Hex } from 'viem'
+import {
+	createPublicClient,
+	http,
+	type Account,
+	type Chain,
+	type Hex,
+} from 'viem'
 import { privateKeyToAccount } from 'viem/accounts'
 import { EIP1193Parameters, EIP1474Methods } from 'viem/types/eip1193'
 import { EventEmitter } from './EventEmitter'
@@ -8,6 +14,7 @@ import type { Web3RequestKind } from './utils'
 import { WalletPermissionSystem } from './wallet/WalletPermissionSystem'
 import type { JsonRpcEngine } from '@metamask/json-rpc-engine'
 import { makeRpcEngine } from './engine'
+import type { PublicClient } from 'viem'
 
 export interface Web3ProviderConfig {
 	debug?: boolean
@@ -43,6 +50,7 @@ export class Web3ProviderBackend extends EventEmitter implements IWeb3Provider {
 			currentChain: this.#activeChain,
 			addNetwork: this.addNetwork,
 			switchNetwork: this.switchNetwork,
+			provider: this.#getRpc(),
 		})
 	}
 	isMetaMask?: boolean | undefined
@@ -110,6 +118,17 @@ export class Web3ProviderBackend extends EventEmitter implements IWeb3Provider {
 		return pendingRequest.authorize()
 	}
 
+	#getRpc(): PublicClient {
+		const chain = this.#activeChain
+
+		const rpc = createPublicClient({
+			chain,
+			transport: http(chain.rpcUrls.default.http[0]),
+		})
+
+		return rpc
+	}
+
 	async reject(
 		requestKind: Web3RequestKind,
 		reason: ErrorWithCode = Deny(),
@@ -135,6 +154,7 @@ export class Web3ProviderBackend extends EventEmitter implements IWeb3Provider {
 			}
 
 			this.#pendingRequests.push(pendingRequest)
+			return this.#pendingRequests
 		})
 	}
 }

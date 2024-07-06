@@ -7,6 +7,9 @@ import { makeAuthorizeMiddleware } from './wallet/AuthorizeMiddleware'
 import type { JsonRpcRequest } from './types'
 import { makeNetworkMiddleware } from './wallet/NetworkMiddleware'
 import type { Chain } from 'viem'
+import { makePassThroughMiddleware } from './wallet/PassthroughMiddleware'
+import type { PublicClient } from 'viem'
+import { makePermissionMiddleware } from './wallet/PermissionMiddleware'
 
 export function makeRpcEngine({
 	emit,
@@ -18,6 +21,7 @@ export function makeRpcEngine({
 	currentChain,
 	addNetwork,
 	switchNetwork,
+	provider,
 }: {
 	emit: (eventName: string, ...args: any[]) => void
 	logger?: (message: string) => void
@@ -31,6 +35,7 @@ export function makeRpcEngine({
 	currentChain: Chain
 	addNetwork: (chain: Chain) => void
 	switchNetwork: (chainId: number) => void
+	provider: PublicClient
 }) {
 	const engine = new JsonRpcEngine()
 
@@ -43,6 +48,8 @@ export function makeRpcEngine({
 	engine.push(makeAccountsMiddleware(emit, accounts, wps))
 
 	engine.push(makeNetworkMiddleware(currentChain, addNetwork, switchNetwork))
+	engine.push(makePermissionMiddleware(emit, accounts))
+	engine.push(makePassThroughMiddleware(provider))
 
 	engine.push((req, res, next, end) => {
 		end(UnsupportedMethod())
