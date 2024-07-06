@@ -84,11 +84,9 @@ test('switch a new network', async ({ page }) => {
     Promise.all([
       window.ethereum.request({
         method: 'net_version',
-        params: [],
       }),
       window.ethereum.request({
         method: 'eth_chainId',
-        params: [],
       }),
     ])
   )
@@ -120,7 +118,6 @@ test('request permissions', async ({ page, accounts }) => {
   const ethAccounts = await page.evaluate(() =>
     window.ethereum.request({
       method: 'eth_accounts',
-      params: [],
     })
   )
   expect(ethAccounts).toEqual(accounts)

@@ -1,13 +1,14 @@
-import type { IWeb3Provider } from './types'
+import { Hex } from 'viem'
 import { EventEmitter } from './EventEmitter'
 import { Web3ProviderBackend, Web3ProviderConfig } from './Web3ProviderBackend'
+import { IWeb3Provider } from './types'
+import { Chain } from 'viem'
 
 type Fn = (...args: any[]) => any
 
 export function makeHeadlessWeb3Provider(
-  privateKeys: string[],
-  chainId: number,
-  rpcUrl: string,
+  privateKeys: Hex[],
+  chain: Chain,
   evaluate: <T extends keyof IWeb3Provider>(
     method: T,
     ...args: IWeb3Provider[T] extends Fn ? Parameters<IWeb3Provider[T]> : []
@@ -16,7 +17,7 @@ export function makeHeadlessWeb3Provider(
 ) {
   const web3Provider = new Web3ProviderBackend(
     privateKeys,
-    [{ chainId, rpcUrl }],
+    [chain],
     config
   )
 

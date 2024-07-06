@@ -1,15 +1,13 @@
-import { type JsonRpcEngine } from '@metamask/json-rpc-engine'
-import type { JsonRpcParams, JsonRpcRequest } from '@metamask/utils'
-
 import { Web3RequestKind } from './utils'
 import {
   ChainDisconnected,
-  Disconnected,
 } from './errors'
-import { ChainConnection, IWeb3Provider } from './types'
 import { EventEmitter } from './EventEmitter'
-import { makeRpcEngine } from './jsonRpcEngine'
-import { Account, Chain, Transport, WalletClient } from 'viem'
+import { WalletPermissionSystem } from './wallet/WalletPermissionSystem'
+import { EIP1193Parameters, EIP1474Methods } from 'viem/types/eip1193'
+import type { Account, Chain, Hex } from 'viem'
+import { privateKeyToAccount } from 'viem/accounts'
+import { IWeb3Provider } from './types'
 
 export interface Web3ProviderConfig {
   debug?: boolean
@@ -18,71 +16,42 @@ export interface Web3ProviderConfig {
 }
 
 export class Web3ProviderBackend extends EventEmitter implements IWeb3Provider {
-  #client: WalletClient<Transport, Chain, Account>
-  #engine: JsonRpcEngine
-
-  private _activeChainId: number
-  private _config: { debug: boolean; logger: typeof console.log }
+  #accounts: Account[] = []
+  #activeChain: Chain
+  #wps: WalletPermissionSystem
 
   constructor(
-    privateKeys: string[],
-    private readonly chains: ChainConnection[],
+    privateKeys: Hex[],
+    private readonly chains: Chain[],
     config: Web3ProviderConfig = {}
   ) {
     super()
-    this._activeChainId = chains[0].chainId
-    this._config = Object.assign({ debug: false, logger: console.log }, config)
-    this.#engine = makeRpcEngine({
-      debug: this._config.debug,
-      logger: this._config.logger,
-    })
+    this.#activeChain = chains[0]
+
+    privateKeys.forEach((pk) => this.#accounts.push(privateKeyToAccount(pk)))
+
+    this.#wps = new WalletPermissionSystem(config.permitted)
   }
 
-  async request(req: Pick<JsonRpcRequest, 'method' | 'params'>): Promise<any> {
-    const res = await this.#engine.handle({
-      jsonrpc: '2.0',
-      id: 1,
-      method: req.method,
-      params: req.params as JsonRpcParams
-    })
-
-    if ('result' in res) {
-      return res.result
-    } else {
-      throw res.error
+  async request(req: EIP1193Parameters<EIP1474Methods>) {
+    switch (req.method) {
+      case 'eth_chainId':
+        return this.#activeChain.id
     }
+   }
+
+  addNetwork(chain: Chain): void {
+    this.chains.push(chain)
   }
 
-  private getCurrentChain(): ChainConnection {
-    const chainConn = this.chains.find(
-      ({ chainId }) => chainId === this._activeChainId
+  switchNetwork(chainId: number): void {
+    const chain = this.chains.find(
+      ({ id }) => id === chainId
     )
-    if (!chainConn) {
-      throw Disconnected()
-    }
-    return chainConn
-  }
-
-  getNetwork(): ChainConnection {
-    return this.getCurrentChain()
-  }
-
-  getNetworks(): ChainConnection[] {
-    return this.chains
-  }
-
-  addNetwork(chainId: number, rpcUrl: string): void {
-    this.chains.push({ chainId, rpcUrl })
-  }
-
-  switchNetwork(chainId_: number): void {
-    const chainConn = this.chains.findIndex(
-      ({ chainId }) => chainId === chainId_
-    )
-    if (!~chainConn) {
+    if (!chain) {
       throw ChainDisconnected()
     }
-    this._activeChainId = chainId_
-    this.emit('chainChanged', chainId_)
+    this.#activeChain = chain
+    this.emit('chainChanged', chainId)
   }
 }

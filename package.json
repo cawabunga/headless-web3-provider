@@ -28,8 +28,6 @@
     "prettify": "prettier --write '**/*.ts'"
   },
   "dependencies": {
-    "@metamask/json-rpc-engine": "^9.0.0",
-    "@metamask/utils": "^9.0.0",
     "viem": "^2.17.1"
   },
   "devDependencies": {
