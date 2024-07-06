@@ -31,6 +31,7 @@
     "viem": "^2.17.1"
   },
   "devDependencies": {
+    "@biomejs/biome": "^1.8.3",
     "@parcel/packager-ts": "2.12.0",
     "@parcel/transformer-typescript-types": "^2.12.0",
     "@playwright/test": "^1.45.1",

@@ -1,41 +1,40 @@
-import { Hex } from 'viem'
-import { EventEmitter } from './EventEmitter'
-import { Web3ProviderBackend, Web3ProviderConfig } from './Web3ProviderBackend'
-import { IWeb3Provider } from './types'
-import { Chain } from 'viem'
+import type { Hex } from 'viem'
+import type { EventEmitter } from './EventEmitter'
+import {
+	Web3ProviderBackend,
+	type Web3ProviderConfig,
+} from './Web3ProviderBackend'
+import type { IWeb3Provider } from './types'
+import type { Chain } from 'viem'
 
 type Fn = (...args: any[]) => any
 
 export function makeHeadlessWeb3Provider(
-  privateKeys: Hex[],
-  chain: Chain,
-  evaluate: <T extends keyof IWeb3Provider>(
-    method: T,
-    ...args: IWeb3Provider[T] extends Fn ? Parameters<IWeb3Provider[T]> : []
-  ) => Promise<void> = async () => {},
-  config?: Web3ProviderConfig
+	privateKeys: Hex[],
+	chain: Chain,
+	evaluate: <T extends keyof IWeb3Provider>(
+		method: T,
+		...args: IWeb3Provider[T] extends Fn ? Parameters<IWeb3Provider[T]> : []
+	) => Promise<void> = async () => {},
+	config?: Web3ProviderConfig,
 ) {
-  const web3Provider = new Web3ProviderBackend(
-    privateKeys,
-    [chain],
-    config
-  )
+	const web3Provider = new Web3ProviderBackend(privateKeys, [chain], config)
 
-  relayEvents(web3Provider, evaluate)
+	relayEvents(web3Provider, evaluate)
 
-  return web3Provider
+	return web3Provider
 }
 
 function relayEvents(
-  eventEmitter: EventEmitter,
-  execute: <T extends keyof IWeb3Provider>(
-    method: T,
-    ...args: IWeb3Provider[T] extends Fn ? Parameters<IWeb3Provider[T]> : []
-  ) => Promise<void>
+	eventEmitter: EventEmitter,
+	execute: <T extends keyof IWeb3Provider>(
+		method: T,
+		...args: IWeb3Provider[T] extends Fn ? Parameters<IWeb3Provider[T]> : []
+	) => Promise<void>,
 ): void {
-  const emit_ = eventEmitter.emit
-  eventEmitter.emit = (eventName, ...args) => {
-    void execute('emit', eventName, ...args)
-    return emit_.apply(eventEmitter, [eventName, ...args])
-  }
+	const emit_ = eventEmitter.emit
+	eventEmitter.emit = (eventName, ...args) => {
+		void execute('emit', eventName, ...args)
+		return emit_.apply(eventEmitter, [eventName, ...args])
+	}
 }

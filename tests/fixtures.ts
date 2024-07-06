@@ -1,46 +1,48 @@
 import { test as base } from '@playwright/test'
 import {
-  injectHeadlessWeb3Provider,
-  Web3ProviderBackend,
-  Web3RequestKind,
+	injectHeadlessWeb3Provider,
+	type Web3ProviderBackend,
+	type Web3RequestKind,
 } from '../src'
-import {privateKeyToAddress} from 'viem/accounts'
+import { privateKeyToAddress } from 'viem/accounts'
 import { getAnvilInstance } from './services/anvil/anvilPoolClient'
-import { Address, Hex } from 'viem'
+import type { Address, Hex } from 'viem'
+import { anvil } from 'viem/chains'
 
 type InjectWeb3Provider = (
-  privateKeys?: string[],
-  permitted?: (Web3RequestKind | string)[]
+	privateKeys?: Hex[],
+	permitted?: (Web3RequestKind | string)[],
 ) => Promise<Web3ProviderBackend>
 
 export const test = base.extend<{
-  signers: [Hex, ...Hex[]]
-  accounts: Address[]
-  injectWeb3Provider: InjectWeb3Provider
-  anvilRpcUrl: string
+	signers: [Hex, ...Hex[]]
+	accounts: Address[]
+	injectWeb3Provider: InjectWeb3Provider
+	anvilRpcUrl: string
 }>({
-  signers: [
-    // anvil dev key
-    '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80',
-  ],
+	signers: [
+		// anvil dev key
+		'0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80',
+	],
 
-  accounts: async ({ signers }, use) => {
-    await use(signers.map((k) => privateKeyToAddress(k)))
-  },
+	accounts: async ({ signers }, use) => {
+		await use(signers.map((k) => privateKeyToAddress(k)))
+	},
 
-  anvilRpcUrl: async ({}, use) => {
-    const anvilInstance = await getAnvilInstance()
-    await use(anvilInstance.rpcUrl)
-    await anvilInstance.destroy()
-  },
+	// biome-ignore lint/correctness/noEmptyPattern: <explanation>
+	anvilRpcUrl: async ({}, use) => {
+		const anvilInstance = await getAnvilInstance()
+		await use(anvilInstance.rpcUrl)
+		await anvilInstance.destroy()
+	},
 
-  injectWeb3Provider: async ({ page, signers, anvilRpcUrl }, use) => {
-    await use((privateKeys = signers, permitted = []) =>
-      injectHeadlessWeb3Provider(page, privateKeys, 31337, anvilRpcUrl, {
-        permitted,
-      })
-    )
-  },
+	injectWeb3Provider: async ({ page, signers, anvilRpcUrl }, use) => {
+		await use((privateKeys = signers, permitted = []) =>
+			injectHeadlessWeb3Provider(page, privateKeys, anvil, {
+				permitted,
+			}),
+		)
+	},
 })
 
 export const { expect, describe } = test

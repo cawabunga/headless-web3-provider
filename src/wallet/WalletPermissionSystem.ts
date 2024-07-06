@@ -3,75 +3,75 @@
 import type { WalletPermission } from 'viem'
 import type { Web3RequestKind } from '../utils'
 
-
 type ShorthandPermission = Web3RequestKind | string
 
 export class WalletPermissionSystem {
-  #permissions: Map<string, WalletPermission[]> = new Map()
-  #wildcardOrigin: WalletPermission['invoker'] = '*' as WalletPermission['invoker']
+	#permissions: Map<string, WalletPermission[]> = new Map()
+	#wildcardOrigin: WalletPermission['invoker'] =
+		'*' as WalletPermission['invoker']
 
-  constructor(perms: ShorthandPermission[] = []) {
-    this.#permissions.set(
-      this.#wildcardOrigin,
-      perms.map((perm) => ({
-        invoker: this.#wildcardOrigin,
-        parentCapability: perm,
-        caveats: [],
-        date: Date.now(),
-        id: '1',
-      }))
-    )
-  }
+	constructor(perms: ShorthandPermission[] = []) {
+		this.#permissions.set(
+			this.#wildcardOrigin,
+			perms.map((perm) => ({
+				invoker: this.#wildcardOrigin,
+				parentCapability: perm,
+				caveats: [],
+				date: Date.now(),
+				id: '1',
+			})),
+		)
+	}
 
-  /**
-   * @param rpcMethod
-   * @param origin not used in the current implementation, empty string can be passed
-   */
-  permit(rpcMethod: Web3RequestKind | string, origin: WalletPermission['invoker']) {
-    const permissions = this.#permissions.get(origin) || []
+	/**
+	 * @param rpcMethod
+	 * @param origin not used in the current implementation, empty string can be passed
+	 */
+	permit(rpcMethod: Web3RequestKind | string, origin: string) {
+		const permissions = this.#permissions.get(origin) || []
 
-    const updatedPermissions = permissions.filter(
-      (permission) => permission.parentCapability !== rpcMethod
-    )
-    updatedPermissions.push({
-      invoker: origin,
-      parentCapability: rpcMethod,
-      caveats: [],
-      date: Date.now(),
-      id: '1'
-    })
+		const updatedPermissions = permissions.filter(
+			(permission) => permission.parentCapability !== rpcMethod,
+		)
+		updatedPermissions.push({
+			invoker: origin as WalletPermission['invoker'],
+			parentCapability: rpcMethod,
+			caveats: [],
+			date: Date.now(),
+			id: '1',
+		})
 
-    this.#permissions.set(origin, updatedPermissions)
-  }
+		this.#permissions.set(origin, updatedPermissions)
+	}
 
-  /**
-   * @param rpcMethod
-   * @param origin not used in the current implementation, empty string can be passed
-   */
-  revoke(rpcMethod: Web3RequestKind | string, origin: string) {
-    const permissions = this.#permissions.get(origin) || []
-    const updatedPermissions = permissions.filter(
-      (permission) => permission.parentCapability !== rpcMethod
-    )
-    this.#permissions.set(origin, updatedPermissions)
-  }
+	/**
+	 * @param rpcMethod
+	 * @param origin not used in the current implementation, empty string can be passed
+	 */
+	revoke(rpcMethod: Web3RequestKind | string, origin: string) {
+		const permissions = this.#permissions.get(origin) || []
+		const updatedPermissions = permissions.filter(
+			(permission) => permission.parentCapability !== rpcMethod,
+		)
+		this.#permissions.set(origin, updatedPermissions)
+	}
 
-  /**
-   * @param rpcMethod
-   * @param origin not used in the current implementation, empty string can be passed
-   */
-  isPermitted(rpcMethod: Web3RequestKind | string, origin: string): boolean {
-    const permissions = this.#permissions.get(origin) || []
-    const wildcardPermissions =
-      this.#permissions.get(this.#wildcardOrigin) || []
+	/**
+	 * @param rpcMethod
+	 * @param origin not used in the current implementation, empty string can be passed
+	 */
+	isPermitted(rpcMethod: Web3RequestKind | string, origin: string): boolean {
+		const permissions = this.#permissions.get(origin) || []
+		const wildcardPermissions =
+			this.#permissions.get(this.#wildcardOrigin) || []
 
-    return (
-      permissions.some(
-        (permission) => permission.parentCapability === rpcMethod
-      ) ||
-      wildcardPermissions.some(
-        (permission) => permission.parentCapability === rpcMethod
-      )
-    )
-  }
+		return (
+			permissions.some(
+				(permission) => permission.parentCapability === rpcMethod,
+			) ||
+			wildcardPermissions.some(
+				(permission) => permission.parentCapability === rpcMethod,
+			)
+		)
+	}
 }
