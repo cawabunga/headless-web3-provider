@@ -14,7 +14,7 @@
         "noForEach": "off"
       },
       "suspicious": {
-        "noExplicitAny": "warn"
+        "noExplicitAny": "off"
       }
     }
   },

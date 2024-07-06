@@ -1,11 +1,13 @@
-import type { Account, Chain, Hex } from 'viem'
+import { http, type Account, type Chain, type Hex } from 'viem'
 import { privateKeyToAccount } from 'viem/accounts'
 import { EIP1193Parameters, EIP1474Methods } from 'viem/types/eip1193'
 import { EventEmitter } from './EventEmitter'
-import { ChainDisconnected } from './errors'
+import { ChainDisconnected, Deny, type ErrorWithCode } from './errors'
 import type { IWeb3Provider, JsonRpcRequest, PendingRequest } from './types'
-import { Web3RequestKind } from './utils'
+import type { Web3RequestKind } from './utils'
 import { WalletPermissionSystem } from './wallet/WalletPermissionSystem'
+import type { JsonRpcEngine } from '@metamask/json-rpc-engine'
+import { makeRpcEngine } from './engine'
 
 export interface Web3ProviderConfig {
 	debug?: boolean
@@ -19,6 +21,7 @@ export class Web3ProviderBackend extends EventEmitter implements IWeb3Provider {
 	#chains: Chain[] = []
 	#wps: WalletPermissionSystem
 	#pendingRequests: PendingRequest[] = []
+	#engine: JsonRpcEngine
 	constructor(
 		privateKeys: Hex[],
 		private readonly chains: Chain[],
@@ -30,31 +33,39 @@ export class Web3ProviderBackend extends EventEmitter implements IWeb3Provider {
 		privateKeys.forEach((pk) => this.#accounts.push(privateKeyToAccount(pk)))
 
 		this.#wps = new WalletPermissionSystem(config.permitted)
+		this.#engine = makeRpcEngine({
+			emit: this.emit,
+			debug: config.debug,
+			logger: config.logger,
+			wps: this.#wps,
+			accounts: this.#accounts,
+			waitAuthorization: this.waitAuthorization,
+			currentChain: this.#activeChain,
+			addNetwork: this.addNetwork,
+			switchNetwork: this.switchNetwork,
+		})
 	}
 	isMetaMask?: boolean | undefined
 
+	async request(req: JsonRpcRequest) {
+		const res = await this.#engine.handle({
+			method: req.method,
+			params: req.params as `0x${string}`[],
+			id: null,
+			jsonrpc: '2.0',
+		})
+
+		if ('result' in res) {
+			return res.result
+		}
+		throw res.error
+	}
 	getNetworks() {
 		return this.#chains.map((chain) => chain.id)
 	}
 
-	async request(req: JsonRpcRequest) {
-		switch (req.method) {
-			case 'eth_chainId':
-				return this.#activeChain.id
-			case 'eth_accounts':
-				if (this.#wps.isPermitted(Web3RequestKind.Accounts, '')) {
-					return this.#accounts.map((a) => a.address)
-				}
-				return []
-			case 'eth_requestAccounts': {
-				this.#wps.permit(Web3RequestKind.Accounts, '')
-
-				const accounts = this.#accounts.map((a) => a.address)
-
-				this.emit('accountsChanged', accounts)
-				return accounts
-			}
-		}
+	getNetwork(): Chain {
+		return this.#activeChain
 	}
 
 	addNetwork(chain: Chain): void {
@@ -98,6 +109,15 @@ export class Web3ProviderBackend extends EventEmitter implements IWeb3Provider {
 		const pendingRequest = this.#consumeRequest(requestKind)
 		return pendingRequest.authorize()
 	}
+
+	async reject(
+		requestKind: Web3RequestKind,
+		reason: ErrorWithCode = Deny(),
+	): Promise<void> {
+		const pendingRequest = this.#consumeRequest(requestKind)
+		return pendingRequest.reject(reason)
+	}
+
 	waitAuthorization<T>(req: JsonRpcRequest, task: () => Promise<T>) {
 		if (this.#wps.isPermitted(req.method, '')) {
 			return task()

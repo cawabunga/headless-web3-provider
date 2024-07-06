@@ -1,14 +1,25 @@
 // EIP-2255: Wallet Permissions System (https://eips.ethereum.org/EIPS/eip-2255)
 
-import type { WalletPermission } from 'viem'
 import type { Web3RequestKind } from '../utils'
+
+// Caveat for `eth_accounts` could be:
+// { "type": "requiredMethods", "value": ["signTypedData_v3"] }
+interface Caveat {
+	type: string
+	value: any // JSON object, meaning depends on the caveat type
+}
+
+interface Permission {
+	invoker: string // DApp origin
+	parentCapability: string // RPC method name
+	caveats: Caveat[]
+}
 
 type ShorthandPermission = Web3RequestKind | string
 
 export class WalletPermissionSystem {
-	#permissions: Map<string, WalletPermission[]> = new Map()
-	#wildcardOrigin: WalletPermission['invoker'] =
-		'*' as WalletPermission['invoker']
+	#permissions: Map<string, Permission[]> = new Map()
+	#wildcardOrigin = '*'
 
 	constructor(perms: ShorthandPermission[] = []) {
 		this.#permissions.set(
@@ -17,8 +28,6 @@ export class WalletPermissionSystem {
 				invoker: this.#wildcardOrigin,
 				parentCapability: perm,
 				caveats: [],
-				date: Date.now(),
-				id: '1',
 			})),
 		)
 	}
@@ -34,11 +43,9 @@ export class WalletPermissionSystem {
 			(permission) => permission.parentCapability !== rpcMethod,
 		)
 		updatedPermissions.push({
-			invoker: origin as WalletPermission['invoker'],
+			invoker: origin,
 			parentCapability: rpcMethod,
-			caveats: [],
-			date: Date.now(),
-			id: '1',
+			caveats: [], // Caveats are not implemented
 		})
 
 		this.#permissions.set(origin, updatedPermissions)
