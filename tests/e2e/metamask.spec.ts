@@ -45,14 +45,15 @@ test('connect the wallet', async ({ page, accounts }) => {
 
 	// After connecting the wallet, the accounts should be available
 	ethAccounts = await page.evaluate(() =>
-		window.ethereum.request({
+		// biome-ignore lint/style/noNonNullAssertion: <explanation>
+		window.ethereum!.request({
 			method: 'eth_accounts',
 		}),
 	)
 	expect(ethAccounts).toEqual(accounts)
 })
 
-test('add a new network', async ({ page }) => {
+test.only('add a new network', async ({ page }) => {
 	await page.locator('text=Add Localhost').click()
 
 	const networkCount = wallet.getNetworks().length

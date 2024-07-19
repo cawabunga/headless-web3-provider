@@ -8,12 +8,14 @@ import {
 import { privateKeyToAccount } from 'viem/accounts'
 import { EventEmitter } from './EventEmitter'
 import { ChainDisconnected, Deny, type ErrorWithCode } from './errors'
-import type { IWeb3Provider, JsonRpcRequest, PendingRequest } from './types'
+import type { JsonRpcRequest, PendingRequest } from './types'
 import type { Web3RequestKind } from './utils'
 import { WalletPermissionSystem } from './wallet/WalletPermissionSystem'
 import type { JsonRpcEngine } from '@metamask/json-rpc-engine'
 import { makeRpcEngine } from './engine'
-import type { PublicClient } from 'viem'
+import type { EIP1193EventMap, EIP1193Provider, PublicClient } from 'viem'
+import type { EIP1193Parameters } from 'viem'
+import type { Json } from '@metamask/utils'
 
 export interface Web3ProviderConfig {
 	debug?: boolean
@@ -21,7 +23,10 @@ export interface Web3ProviderConfig {
 	permitted?: (Web3RequestKind | string)[]
 }
 
-export class Web3ProviderBackend extends EventEmitter implements IWeb3Provider {
+export class Web3ProviderBackend
+	extends EventEmitter
+	implements EIP1193Provider
+{
 	private accounts: Account[] = []
 	private activeChain: Chain
 	private chains: Chain[] = []
@@ -47,17 +52,23 @@ export class Web3ProviderBackend extends EventEmitter implements IWeb3Provider {
 			logger: config.logger,
 			wps: this.wps,
 			accounts: this.accounts,
-			waitAuthorization: this.waitAuthorization.bind(this),
+			waitAuthorization: (req, task) => this.waitAuthorization(req, task),
 			currentChain: this.activeChain,
-			addNetwork: this.addNetwork.bind(this),
-			switchNetwork: this.switchNetwork.bind(this),
+			addNetwork: (chain) => this.addNetwork(chain),
+			switchNetwork: (chain) => this.switchNetwork(chain),
 			provider: this.getRpc(),
 		})
 	}
+	removeListener<TEvent extends keyof EIP1193EventMap>(
+		event: TEvent,
+		listener: EIP1193EventMap[TEvent],
+	): void {
+		throw new Error('Method not implemented.')
+	}
 
 	isMetaMask?: boolean
-
-	async request(req: JsonRpcRequest) {
+	// @ts-expect-error
+	async request(req: EIP1193Parameters): Promise<Json> {
 		const res = await this.engine.handle({
 			method: req.method,
 			params: req.params as `0x${string}`[],
@@ -68,7 +79,7 @@ export class Web3ProviderBackend extends EventEmitter implements IWeb3Provider {
 		if ('result' in res) {
 			return res.result
 		}
-		console.log(res.error)
+
 		throw res.error
 	}
 	getNetworks() {

@@ -1,16 +1,10 @@
 import type { Page } from '@playwright/test'
 import type { Web3ProviderConfig } from './Web3ProviderBackend'
 import { makeHeadlessWeb3Provider } from './factory'
-import type { IWeb3Provider } from './types'
-import type { Chain, Hex } from 'viem'
+import type { Chain, EIP1193Provider, Hex } from 'viem'
+import 'viem/window'
 
 type Fn = (...args: any[]) => any
-
-declare global {
-	interface Window {
-		ethereum: IWeb3Provider
-	}
-}
 
 export async function injectHeadlessWeb3Provider(
 	page: Page,
@@ -18,13 +12,15 @@ export async function injectHeadlessWeb3Provider(
 	chain: Chain,
 	config?: Web3ProviderConfig,
 ) {
-	const evaluate = async <T extends keyof IWeb3Provider>(
+	const evaluate = async <T extends keyof NonNullable<EIP1193Provider>>(
 		method: T,
-		...args: IWeb3Provider[T] extends Fn ? Parameters<IWeb3Provider[T]> : []
+		...args: EIP1193Provider[T] extends Fn ? Parameters<EIP1193Provider[T]> : []
 	) => {
 		return page.evaluate(
 			([method, args]) => {
-				const ethereum = window.ethereum
+				// biome-ignore lint/style/noNonNullAssertion: <explanation>
+				const ethereum = window.ethereum!
+
 				const fn = ethereum[method]
 				if (typeof fn === 'function') {
 					// @ts-ignore
@@ -45,9 +41,11 @@ export async function injectHeadlessWeb3Provider(
 
 	await page.exposeFunction(
 		'__injectedHeadlessWeb3ProviderRequest',
-		<T extends keyof IWeb3Provider>(
+		<T extends keyof EIP1193Provider>(
 			method: T,
-			...args: IWeb3Provider[T] extends Fn ? Parameters<IWeb3Provider[T]> : []
+			...args: EIP1193Provider[T] extends Fn
+				? Parameters<EIP1193Provider[T]>
+				: []
 		) =>
 			// @ts-expect-error
 			web3Provider[method](...args),

@@ -7,12 +7,3 @@ export interface PendingRequest {
 	reject: (err: { message?: string; code?: number }) => void
 	authorize: () => Promise<void>
 }
-
-export interface IWeb3Provider {
-	isMetaMask?: boolean
-
-	request(args: JsonRpcRequest): Promise<any>
-
-	emit(eventName: string, ...args: unknown[]): void
-	on(eventName: string, listener: (eventName: string) => void): void
-}

@@ -52,9 +52,7 @@ const config: PlaywrightTestConfig = {
 	],
 	webServer: [
 		{
-			command: `pnpm tsx ${require.resolve(
-				'./tests/services/anvil/anvilPoolServer.ts',
-			)}`,
+			command: `pnpm tsx './tests/services/anvil/anvilPoolServer.ts'`,
 			port: 3077,
 			reuseExistingServer: true,
 		},
