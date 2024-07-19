@@ -6,7 +6,6 @@ import {
 	type Hex,
 } from 'viem'
 import { privateKeyToAccount } from 'viem/accounts'
-import { EIP1193Parameters, EIP1474Methods } from 'viem/types/eip1193'
 import { EventEmitter } from './EventEmitter'
 import { ChainDisconnected, Deny, type ErrorWithCode } from './errors'
 import type { IWeb3Provider, JsonRpcRequest, PendingRequest } from './types'
@@ -23,40 +22,43 @@ export interface Web3ProviderConfig {
 }
 
 export class Web3ProviderBackend extends EventEmitter implements IWeb3Provider {
-	#accounts: Account[] = []
-	#activeChain: Chain
-	#chains: Chain[] = []
-	#wps: WalletPermissionSystem
-	#pendingRequests: PendingRequest[] = []
-	#engine: JsonRpcEngine
+	private accounts: Account[] = []
+	private activeChain: Chain
+	private chains: Chain[] = []
+	private wps: WalletPermissionSystem
+	private pendingRequests: PendingRequest[] = []
+	private engine: JsonRpcEngine
+
 	constructor(
 		privateKeys: Hex[],
-		private readonly chains: Chain[],
+		private readonly _chains: Chain[],
 		config: Web3ProviderConfig = {},
 	) {
 		super()
-		this.#activeChain = chains[0]
+		this.activeChain = _chains[0]
+		this.chains = _chains
 
-		privateKeys.forEach((pk) => this.#accounts.push(privateKeyToAccount(pk)))
+		privateKeys.forEach((pk) => this.accounts.push(privateKeyToAccount(pk)))
 
-		this.#wps = new WalletPermissionSystem(config.permitted)
-		this.#engine = makeRpcEngine({
-			emit: this.emit,
+		this.wps = new WalletPermissionSystem(config.permitted)
+		this.engine = makeRpcEngine({
+			emit: this.emit.bind(this),
 			debug: config.debug,
 			logger: config.logger,
-			wps: this.#wps,
-			accounts: this.#accounts,
-			waitAuthorization: this.waitAuthorization,
-			currentChain: this.#activeChain,
-			addNetwork: this.addNetwork,
-			switchNetwork: this.switchNetwork,
-			provider: this.#getRpc(),
+			wps: this.wps,
+			accounts: this.accounts,
+			waitAuthorization: this.waitAuthorization.bind(this),
+			currentChain: this.activeChain,
+			addNetwork: this.addNetwork.bind(this),
+			switchNetwork: this.switchNetwork.bind(this),
+			provider: this.getRpc(),
 		})
 	}
-	isMetaMask?: boolean | undefined
+
+	isMetaMask?: boolean
 
 	async request(req: JsonRpcRequest) {
-		const res = await this.#engine.handle({
+		const res = await this.engine.handle({
 			method: req.method,
 			params: req.params as `0x${string}`[],
 			id: null,
@@ -66,14 +68,15 @@ export class Web3ProviderBackend extends EventEmitter implements IWeb3Provider {
 		if ('result' in res) {
 			return res.result
 		}
+		console.log(res.error)
 		throw res.error
 	}
 	getNetworks() {
-		return this.#chains.map((chain) => chain.id)
+		return this.chains.map((chain) => chain.id)
 	}
 
 	getNetwork(): Chain {
-		return this.#activeChain
+		return this.activeChain
 	}
 
 	addNetwork(chain: Chain): void {
@@ -85,11 +88,11 @@ export class Web3ProviderBackend extends EventEmitter implements IWeb3Provider {
 		if (!chain) {
 			throw ChainDisconnected()
 		}
-		this.#activeChain = chain
+		this.activeChain = chain
 		this.emit('chainChanged', chainId)
 	}
 	getPendingRequestCount(requestKind?: Web3RequestKind): number {
-		const pendingRequests = this.#pendingRequests
+		const pendingRequests = this.pendingRequests
 		if (requestKind == null) {
 			return pendingRequests.length
 		}
@@ -98,14 +101,14 @@ export class Web3ProviderBackend extends EventEmitter implements IWeb3Provider {
 			(request) => request.requestInfo.method === requestKind,
 		).length
 	}
-	#consumeRequest(requestKind: Web3RequestKind) {
-		const request = this.#pendingRequests.find((request) => {
+	private consumeRequest(requestKind: Web3RequestKind) {
+		const request = this.pendingRequests.find((request) => {
 			return request.requestInfo.method === requestKind
 		})
 
 		// If found, remove it from the pendingRequests array
 		if (request) {
-			this.#pendingRequests = this.#pendingRequests.filter(
+			this.pendingRequests = this.pendingRequests.filter(
 				(item) => item !== request,
 			)
 		}
@@ -114,12 +117,12 @@ export class Web3ProviderBackend extends EventEmitter implements IWeb3Provider {
 		return request!
 	}
 	async authorize(requestKind: Web3RequestKind): Promise<void> {
-		const pendingRequest = this.#consumeRequest(requestKind)
+		const pendingRequest = this.consumeRequest(requestKind)
 		return pendingRequest.authorize()
 	}
 
-	#getRpc(): PublicClient {
-		const chain = this.#activeChain
+	private getRpc(): PublicClient {
+		const chain = this.activeChain
 
 		const rpc = createPublicClient({
 			chain,
@@ -133,12 +136,12 @@ export class Web3ProviderBackend extends EventEmitter implements IWeb3Provider {
 		requestKind: Web3RequestKind,
 		reason: ErrorWithCode = Deny(),
 	): Promise<void> {
-		const pendingRequest = this.#consumeRequest(requestKind)
+		const pendingRequest = this.consumeRequest(requestKind)
 		return pendingRequest.reject(reason)
 	}
 
 	waitAuthorization<T>(req: JsonRpcRequest, task: () => Promise<T>) {
-		if (this.#wps.isPermitted(req.method, '')) {
+		if (this.wps.isPermitted(req.method, '')) {
 			return task()
 		}
 
@@ -153,8 +156,8 @@ export class Web3ProviderBackend extends EventEmitter implements IWeb3Provider {
 				},
 			}
 
-			this.#pendingRequests.push(pendingRequest)
-			return this.#pendingRequests
+			this.pendingRequests.push(pendingRequest)
+			return this.pendingRequests
 		})
 	}
 }

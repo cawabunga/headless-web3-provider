@@ -16,13 +16,13 @@ test.beforeEach(async ({ page, injectWeb3Provider }) => {
 	await page.goto('https://metamask.github.io/test-dapp/')
 })
 
-test.only('connect the wallet', async ({ page, accounts }) => {
+test('connect the wallet', async ({ page, accounts }) => {
 	// Until the wallet is connected, the accounts should be empty
-	let ethAccounts = await page.evaluate(() => {
-		return window.ethereum.request({
+	let ethAccounts = await page.evaluate(() =>
+		window.ethereum.request({
 			method: 'eth_accounts',
-		})
-	})
+		}),
+	)
 	expect(ethAccounts).toEqual([])
 
 	// Request connecting the wallet
