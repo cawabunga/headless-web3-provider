@@ -3,8 +3,6 @@ import {
 	createAsyncMiddleware,
 	type JsonRpcMiddleware,
 } from '@metamask/json-rpc-engine'
-import { JsonRpcRequest } from '@metamask/utils'
-import type { EIP1193Provider } from 'viem'
 
 // User safe methods
 const methods = [
@@ -43,11 +41,11 @@ export function makePassThroughMiddleware(provider: JsonRpcProvider) {
 		createAsyncMiddleware(async (req, res, next) => {
 			if (methods.includes(req.method as Method)) {
 				try {
-					const { result } = await provider.send(req.method, req.params)
+					const result = await provider.send(req.method, req.params)
 
 					res.result = result
 				} catch (e) {
-					console.error('ERRORR!!', e)
+					console.error('Error!!!', e)
 				}
 			} else {
 				void next()
