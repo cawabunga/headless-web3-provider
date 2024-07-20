@@ -7,7 +7,7 @@ import {
 import { privateKeyToAddress } from 'viem/accounts'
 import type { Address, Hex } from 'viem'
 import { anvil } from 'viem/chains'
-import { anvilInstance } from './services/anvil/anvilPoolServer.js'
+import { getAnvilInstance } from './services/anvil/anvilPoolClient.js'
 
 type InjectWeb3Provider = (
 	privateKeys?: Hex[],
@@ -31,8 +31,9 @@ export const test = base.extend<{
 
 	// biome-ignore lint/correctness/noEmptyPattern: <explanation>
 	anvilRpcUrl: async ({}, use) => {
-		await use(`http://127.0.0.1:${anvilInstance.port}`)
-		await anvilInstance.stop()
+		const anvilInstance = getAnvilInstance()
+		await use(anvilInstance.rpcUrl)
+		await anvilInstance.restart()
 	},
 
 	injectWeb3Provider: async ({ page, signers, anvilRpcUrl }, use) => {

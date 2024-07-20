@@ -50,6 +50,13 @@ const config: PlaywrightTestConfig = {
 			use: { ...devices['Desktop Chrome'] },
 		},
 	],
+	webServer: [
+		{
+			command: `pnpm tsx './tests/services/anvil/anvilPoolServer.ts'`,
+			port: 3077,
+			reuseExistingServer: true,
+		},
+	],
 }
 
 export default config
