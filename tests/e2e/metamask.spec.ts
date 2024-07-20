@@ -10,8 +10,9 @@ test.beforeEach(async ({ page, injectWeb3Provider }) => {
 	wallet = await injectWeb3Provider()
 
 	// In order to make https://metamask.github.io/test-dapp/ work flag should be set
+	// @ts-expect-error
 	// biome-ignore lint/suspicious/noAssignInExpressions: <explanation>
-	await page.addInitScript(() => (window.ethereum.isMetaMask = true))
+	await page.addInitScript(() => (window.ethereum!.isMetaMask = true))
 
 	await page.goto('https://metamask.github.io/test-dapp/')
 })
@@ -19,7 +20,7 @@ test.beforeEach(async ({ page, injectWeb3Provider }) => {
 test('connect the wallet', async ({ page, accounts }) => {
 	// Until the wallet is connected, the accounts should be empty
 	let ethAccounts = await page.evaluate(() =>
-		window.ethereum.request({
+		window.ethereum!.request({
 			method: 'eth_accounts',
 		}),
 	)
@@ -45,7 +46,6 @@ test('connect the wallet', async ({ page, accounts }) => {
 
 	// After connecting the wallet, the accounts should be available
 	ethAccounts = await page.evaluate(() =>
-		// biome-ignore lint/style/noNonNullAssertion: <explanation>
 		window.ethereum!.request({
 			method: 'eth_accounts',
 		}),
@@ -53,7 +53,7 @@ test('connect the wallet', async ({ page, accounts }) => {
 	expect(ethAccounts).toEqual(accounts)
 })
 
-test.only('add a new network', async ({ page }) => {
+test('add a new network', async ({ page }) => {
 	await page.locator('text=Add Localhost').click()
 
 	const networkCount = wallet.getNetworks().length
@@ -76,10 +76,10 @@ test('switch a new network', async ({ page }) => {
 
 	const [prevNetworkId, prevChainId] = await page.evaluate(() =>
 		Promise.all([
-			window.ethereum.request({
+			window.ethereum!.request({
 				method: 'net_version',
 			}),
-			window.ethereum.request({
+			window.ethereum!.request({
 				method: 'eth_chainId',
 			}),
 		]),
@@ -90,10 +90,10 @@ test('switch a new network', async ({ page }) => {
 
 	const [newNetworkId, newChainId] = await page.evaluate(() =>
 		Promise.all([
-			window.ethereum.request({
+			window.ethereum!.request({
 				method: 'net_version',
 			}),
-			window.ethereum.request({
+			window.ethereum!.request({
 				method: 'eth_chainId',
 			}),
 		]),
@@ -124,7 +124,7 @@ test('request permissions', async ({ page, accounts }) => {
 	).toEqual(0)
 
 	const ethAccounts = await page.evaluate(() =>
-		window.ethereum.request({
+		window.ethereum!.request({
 			method: 'eth_accounts',
 		}),
 	)
@@ -149,7 +149,7 @@ const getTransactionCount = async (
 ): Promise<number> => {
 	const res = await page.evaluate(
 		(addr) =>
-			window.ethereum.request({
+			window.ethereum!.request({
 				method: 'eth_getTransactionCount',
 				params: [addr as Address, 'latest'],
 			}),

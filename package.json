@@ -8,6 +8,7 @@
   "main": "dist/main.cjs",
   "module": "dist/module.mjs",
   "types": "dist/types.d.ts",
+  "type": "module",
   "sideEffects": false,
   "files": [
     "dist/*",
@@ -28,6 +29,7 @@
     "prettify": "prettier --write '**/*.ts'"
   },
   "dependencies": {
+    "@ethersproject/providers": "^5.7.2",
     "@metamask/json-rpc-engine": "^9.0.0",
     "@metamask/utils": "^9.1.0",
     "viem": "^2.17.1"
@@ -40,6 +42,7 @@
     "@types/node": "^20.14.9",
     "generic-pool": "^3.9.0",
     "parcel": "^2.12.0",
+    "prool": "^0.0.15",
     "tsx": "^4.16.2",
     "typescript": "~5.5.3"
   },

@@ -3,11 +3,11 @@ import {
 	injectHeadlessWeb3Provider,
 	type Web3ProviderBackend,
 	type Web3RequestKind,
-} from '../src'
+} from '../src/index.js'
 import { privateKeyToAddress } from 'viem/accounts'
-import { getAnvilInstance } from './services/anvil/anvilPoolClient'
 import type { Address, Hex } from 'viem'
 import { anvil } from 'viem/chains'
+import { getAnvilInstance } from './services/anvil/anvilPoolClient'
 
 type InjectWeb3Provider = (
 	privateKeys?: Hex[],
@@ -38,9 +38,14 @@ export const test = base.extend<{
 
 	injectWeb3Provider: async ({ page, signers, anvilRpcUrl }, use) => {
 		await use((privateKeys = signers, permitted = []) =>
-			injectHeadlessWeb3Provider(page, privateKeys, anvil, {
-				permitted,
-			}),
+			injectHeadlessWeb3Provider(
+				page,
+				privateKeys,
+				{ ...anvil, rpcUrls: { default: { http: [anvilRpcUrl] } } },
+				{
+					permitted,
+				},
+			),
 		)
 	},
 })

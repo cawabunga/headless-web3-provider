@@ -10,6 +10,8 @@ import type { Chain } from 'viem'
 import { makePassThroughMiddleware } from './wallet/PassthroughMiddleware'
 import type { PublicClient } from 'viem'
 import { makePermissionMiddleware } from './wallet/PermissionMiddleware'
+import type { EIP1193Provider } from 'viem'
+import type { JsonRpcProvider } from '@ethersproject/providers'
 
 export function makeRpcEngine({
 	emit,
@@ -35,7 +37,7 @@ export function makeRpcEngine({
 	currentChain: Chain
 	addNetwork: (chain: Chain) => void
 	switchNetwork: (chainId: number) => void
-	provider: PublicClient
+	provider: JsonRpcProvider
 }) {
 	const engine = new JsonRpcEngine()
 

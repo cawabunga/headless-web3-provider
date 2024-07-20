@@ -1,10 +1,4 @@
-import {
-	createPublicClient,
-	http,
-	type Account,
-	type Chain,
-	type Hex,
-} from 'viem'
+import type { Account, Chain, Hex } from 'viem'
 import { privateKeyToAccount } from 'viem/accounts'
 import { EventEmitter } from './EventEmitter'
 import { ChainDisconnected, Deny, type ErrorWithCode } from './errors'
@@ -13,9 +7,10 @@ import type { Web3RequestKind } from './utils'
 import { WalletPermissionSystem } from './wallet/WalletPermissionSystem'
 import type { JsonRpcEngine } from '@metamask/json-rpc-engine'
 import { makeRpcEngine } from './engine'
-import type { EIP1193EventMap, EIP1193Provider, PublicClient } from 'viem'
+import type { EIP1193EventMap, EIP1193Provider } from 'viem'
 import type { EIP1193Parameters } from 'viem'
 import type { Json } from '@metamask/utils'
+import { JsonRpcProvider } from '@ethersproject/providers'
 
 export interface Web3ProviderConfig {
 	debug?: boolean
@@ -124,7 +119,6 @@ export class Web3ProviderBackend
 			)
 		}
 
-		// biome-ignore lint/style/noNonNullAssertion: <explanation>
 		return request!
 	}
 	async authorize(requestKind: Web3RequestKind): Promise<void> {
@@ -132,13 +126,10 @@ export class Web3ProviderBackend
 		return pendingRequest.authorize()
 	}
 
-	private getRpc(): PublicClient {
+	private getRpc(): JsonRpcProvider {
 		const chain = this.activeChain
 
-		const rpc = createPublicClient({
-			chain,
-			transport: http(chain.rpcUrls.default.http[0]),
-		})
+		const rpc = new JsonRpcProvider(chain.rpcUrls.default.http[0], chain.id)
 
 		return rpc
 	}

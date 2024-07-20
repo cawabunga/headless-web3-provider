@@ -1,8 +1,10 @@
+import type { JsonRpcProvider } from '@ethersproject/providers'
 import {
 	createAsyncMiddleware,
 	type JsonRpcMiddleware,
 } from '@metamask/json-rpc-engine'
-import type { PublicClient } from 'viem'
+import { JsonRpcRequest } from '@metamask/utils'
+import type { EIP1193Provider } from 'viem'
 
 // User safe methods
 const methods = [
@@ -28,19 +30,25 @@ const methods = [
 	'eth_getUncleCountByBlockHash',
 	'eth_getUncleCountByBlockNumber',
 	'eth_sendRawTransaction',
-]
+] as const
+
+type Method = (typeof methods)[number]
 
 /**
  * Creates a middleware which passes through safe requests to a real node
  * @param providerThunk
  */
-export function makePassThroughMiddleware(provider: PublicClient) {
+export function makePassThroughMiddleware(provider: JsonRpcProvider) {
 	const passThroughMiddleware: JsonRpcMiddleware<any, any> =
 		createAsyncMiddleware(async (req, res, next) => {
-			if (methods.includes(req.method)) {
-				// @ts-expect-error Params are not typed
-				const result = await provider.request(req)
-				res.result = result
+			if (methods.includes(req.method as Method)) {
+				try {
+					const { result } = await provider.send(req.method, req.params)
+
+					res.result = result
+				} catch (e) {
+					console.error('ERRORR!!', e)
+				}
 			} else {
 				void next()
 			}
