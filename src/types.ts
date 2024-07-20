@@ -1,4 +1,4 @@
-import type { EIP1193Parameters, EIP1474Methods } from 'viem/types/eip1193'
+import type { EIP1193Parameters, EIP1474Methods } from 'viem'
 
 export type JsonRpcRequest = EIP1193Parameters<EIP1474Methods>
 

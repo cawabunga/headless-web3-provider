@@ -1,10 +1,8 @@
-import { createServer } from 'prool'
+import { definePool } from 'prool'
 import { anvil } from 'prool/instances'
 
-const server = createServer({
+const server = definePool({
 	instance: anvil(),
-	port: 3077,
 })
 
-await server.start()
-console.log('listening on port 3077')
+export const anvilInstance = await server.start(1, { port: 8545 })

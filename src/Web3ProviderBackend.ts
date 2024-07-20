@@ -54,12 +54,6 @@ export class Web3ProviderBackend
 			provider: this.getRpc(),
 		})
 	}
-	removeListener<TEvent extends keyof EIP1193EventMap>(
-		event: TEvent,
-		listener: EIP1193EventMap[TEvent],
-	): void {
-		throw new Error('Method not implemented.')
-	}
 
 	isMetaMask?: boolean
 	// @ts-expect-error

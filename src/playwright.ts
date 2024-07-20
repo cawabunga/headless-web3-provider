@@ -18,7 +18,6 @@ export async function injectHeadlessWeb3Provider(
 	) => {
 		return page.evaluate(
 			([method, args]) => {
-				// biome-ignore lint/style/noNonNullAssertion: <explanation>
 				const ethereum = window.ethereum!
 
 				const fn = ethereum[method]
@@ -95,6 +94,12 @@ export async function injectHeadlessWeb3Provider(
 
 					return this.on(eventName, cb)
 				}
+				removeListener(
+					eventName: string,
+					listener: (...args: any[]) => void,
+				): this {
+					return this.off(eventName, listener)
+				}
 			}
 
 			const proxyableMethods = ['request']
@@ -109,9 +114,7 @@ export async function injectHeadlessWeb3Provider(
 						}
 					}
 
-					// @ts-expect-error
-					// biome-ignore lint/style/noArguments: <explanation>
-					return Reflect.get(...arguments)
+					return Reflect.get(target, prop)
 				},
 			})
 			window.dispatchEvent(new Event('ethereum#initialized'))
