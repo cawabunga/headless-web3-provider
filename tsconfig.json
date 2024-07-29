@@ -11,7 +11,8 @@
 		"strict": true,
 		"skipLibCheck": true,
 		"outDir": "dist",
-		"declaration": true
+		"declaration": true,
+		"noImplicitAny": true
 	},
 	"include": ["src", "tests", "playwright.config.ts"]
 }

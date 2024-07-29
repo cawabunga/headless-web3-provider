@@ -1,7 +1,7 @@
 import type { JsonRpcEngine } from '@metamask/json-rpc-engine'
 import {
 	http,
-	type Account,
+	type LocalAccount,
 	type Chain,
 	type EIP1193Parameters,
 	type EIP1193Provider,
@@ -31,7 +31,7 @@ export class Web3ProviderBackend
 	extends EventEmitter
 	implements EIP1193Provider
 {
-	private accounts: Account[] = []
+	private accounts: LocalAccount[] = []
 	private activeChain: Chain
 	private chains: Chain[] = []
 	private wps: WalletPermissionSystem
@@ -41,7 +41,7 @@ export class Web3ProviderBackend
 	constructor({ privateKeys, chains, ...config }: Web3ProviderConfig) {
 		super()
 		this.activeChain = chains[0]
-		this.chains = [...chains]
+		this.chains = chains
 
 		privateKeys.forEach((pk) => this.accounts.push(privateKeyToAccount(pk)))
 

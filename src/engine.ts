@@ -1,5 +1,5 @@
 import { JsonRpcEngine } from '@metamask/json-rpc-engine'
-import type { Account, Chain } from 'viem'
+import type { Account, Chain, LocalAccount } from 'viem'
 
 import { UnsupportedMethod } from './errors.js'
 import type { ChainTransport, JsonRpcRequest } from './types.js'
@@ -9,12 +9,13 @@ import { createChainMiddleware } from './wallet/ChainMiddleware.js'
 import { createPassThroughMiddleware } from './wallet/PassthroughMiddleware.js'
 import { createPermissionMiddleware } from './wallet/PermissionMiddleware.js'
 import type { WalletPermissionSystem } from './wallet/WalletPermissionSystem.js'
+import { createSignMessageMiddleware } from './wallet/SignMessageMiddleware.js'
 
 type RpcEngineConfig = {
 	emit: (eventName: string, ...args: any[]) => void
 	logger?: (message: string) => void
 	debug?: boolean
-	accounts: Account[]
+	accounts: LocalAccount[]
 	wps: WalletPermissionSystem
 	waitAuthorization: (
 		req: JsonRpcRequest,
@@ -47,7 +48,7 @@ export function createRpcEngine({
 
 	engine.push(createAuthorizeMiddleware({ waitAuthorization }))
 	engine.push(createAccountsMiddleware({ emit, accounts, wps }))
-
+	engine.push(createSignMessageMiddleware({ account: accounts[0] }))
 	engine.push(createChainMiddleware({ getChain, addChain, switchChain }))
 	engine.push(createPermissionMiddleware({ emit, accounts }))
 	engine.push(createPassThroughMiddleware({ getChainTransport }))

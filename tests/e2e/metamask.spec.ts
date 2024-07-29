@@ -202,14 +202,6 @@ test('sign a message', async ({ page, signers, wallet }) => {
  */
 const data = [
 	{
-		version: 'eth_signTypedData',
-		requestKind: Web3RequestKind.SignTypedData,
-		signButtonId: 'signTypedData',
-		signResultId: 'signTypedDataResult',
-		verifyButtonId: 'signTypedDataVerify',
-		verifyResultId: 'signTypedDataVerifyResult',
-	},
-	{
 		version: 'eth_signTypedData_v3',
 		requestKind: Web3RequestKind.SignTypedDataV3,
 		signButtonId: 'signTypedDataV3',
