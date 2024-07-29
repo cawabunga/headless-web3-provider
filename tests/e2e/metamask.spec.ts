@@ -1,23 +1,10 @@
-import { expect, test } from '../fixtures'
-import { type Web3ProviderBackend, Web3RequestKind } from '../../src/index'
 import type { Page } from '@playwright/test'
 import { type Address, privateKeyToAccount } from 'viem/accounts'
 
-let wallet: Web3ProviderBackend
+import { Web3RequestKind } from '../../src/index'
+import { expect, test } from '../fixtures'
 
-test.beforeEach(async ({ page, injectWeb3Provider }) => {
-	// Inject window.ethereum instance
-	wallet = await injectWeb3Provider()
-
-	// In order to make https://metamask.github.io/test-dapp/ work flag should be set
-	// @ts-expect-error
-	// biome-ignore lint/suspicious/noAssignInExpressions: <explanation>
-	await page.addInitScript(() => (window.ethereum!.isMetaMask = true))
-
-	await page.goto('https://metamask.github.io/test-dapp/')
-})
-
-test('connect the wallet', async ({ page, accounts }) => {
+test('connect the wallet', async ({ page, accounts, wallet }) => {
 	// Until the wallet is connected, the accounts should be empty
 	let ethAccounts = await page.evaluate(() =>
 		window.ethereum!.request({
@@ -46,24 +33,31 @@ test('connect the wallet', async ({ page, accounts }) => {
 
 	// After connecting the wallet, the accounts should be available
 	ethAccounts = await page.evaluate(() =>
-		window.ethereum!.request({
-			method: 'eth_accounts',
-		}),
+		window
+			.ethereum!.request({
+				method: 'eth_accounts',
+			})
+			.catch((e) => {
+				console.log('would throw', e)
+				console.log(window.ethereum.isMetaMask)
+				console.log(window.ethereum.isConnected())
+				console.log(window.ethereum)
+			}),
 	)
 	expect(ethAccounts).toEqual(accounts)
 })
 
-test('add a new network', async ({ page }) => {
+test('add a new chain', async ({ page, wallet }) => {
 	await page.locator('text=Add Localhost').click()
 
-	const networkCount = wallet.getNetworks().length
+	const chainCount = wallet.getChainIds().length
 	await wallet.authorize(Web3RequestKind.AddEthereumChain)
 
-	expect(wallet.getNetworks().length).toEqual(networkCount + 1)
+	expect(wallet.getChainIds().length).toEqual(chainCount + 1)
 })
 
-test('switch a new network', async ({ page }) => {
-	wallet.addNetwork({
+test('switch a new chain', async ({ page, wallet }) => {
+	wallet.addChain({
 		name: 'new network',
 		nativeCurrency: {
 			name: 'Network',
@@ -105,7 +99,7 @@ test('switch a new network', async ({ page }) => {
 	expect(prevChainId).not.toEqual(newChainId)
 })
 
-test('request permissions', async ({ page, accounts }) => {
+test('request permissions', async ({ page, accounts, wallet }) => {
 	await page.getByRole('button', { name: 'Connect', exact: true }).click()
 	await wallet.authorize(Web3RequestKind.RequestAccounts)
 
@@ -131,16 +125,16 @@ test('request permissions', async ({ page, accounts }) => {
 	expect(ethAccounts).toEqual(accounts)
 })
 
-test('deploy a token', async ({ page }) => {
+test('deploy a token', async ({ page, wallet }) => {
 	await page.getByRole('button', { name: 'Connect', exact: true }).click()
 	await wallet.authorize(Web3RequestKind.RequestAccounts)
 
-	await expect(page.locator('#tokenAddresses')).toBeEmpty()
+	await expect(page.locator('#erc20TokenAddresses')).toBeEmpty()
 	await page.locator('text=Create Token').click()
-	await expect(page.locator('#tokenAddresses')).toBeEmpty()
+	await expect(page.locator('#erc20TokenAddresses')).toBeEmpty()
 
 	await wallet.authorize(Web3RequestKind.SendTransaction)
-	await expect(page.locator('#tokenAddresses')).toContainText(/0x.+/)
+	await expect(page.locator('#erc20TokenAddresses')).toContainText(/0x.+/)
 })
 
 const getTransactionCount = async (
@@ -158,7 +152,7 @@ const getTransactionCount = async (
 	return Number(res)
 }
 
-test('send legacy transaction', async ({ page, accounts }) => {
+test('send legacy transaction', async ({ page, accounts, wallet }) => {
 	await page.getByRole('button', { name: 'Connect', exact: true }).click()
 	await wallet.authorize(Web3RequestKind.RequestAccounts)
 
@@ -170,7 +164,7 @@ test('send legacy transaction', async ({ page, accounts }) => {
 	expect(nonceAfter).toEqual(nonceBefore + 1)
 })
 
-test('send EIP-1559 transaction', async ({ page, accounts }) => {
+test('send EIP-1559 transaction', async ({ page, accounts, wallet }) => {
 	await page.getByRole('button', { name: 'Connect', exact: true }).click()
 	await wallet.authorize(Web3RequestKind.RequestAccounts)
 
@@ -185,7 +179,7 @@ test('send EIP-1559 transaction', async ({ page, accounts }) => {
 /**
  * Suite tests "personal_sign" RPC method
  */
-test('sign a message', async ({ page, signers }) => {
+test('sign a message', async ({ page, signers, wallet }) => {
 	// Establish a connection with the wallet
 	await page.getByRole('button', { name: 'Connect', exact: true }).click()
 	// Authorize the request for account access
@@ -246,7 +240,11 @@ for (const {
 	verifyButtonId,
 	verifyResultId,
 } of data) {
-	test(`sign a typed message (${version})`, async ({ page, signers }) => {
+	test(`sign a typed message (${version})`, async ({
+		page,
+		signers,
+		wallet,
+	}) => {
 		// Establish a connection with the wallet
 		await page.getByRole('button', { name: 'Connect', exact: true }).click()
 		// Authorize the request for account access

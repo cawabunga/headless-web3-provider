@@ -1,8 +1,9 @@
-import type { JsonRpcProvider } from '@ethersproject/providers'
 import {
 	createAsyncMiddleware,
 	type JsonRpcMiddleware,
 } from '@metamask/json-rpc-engine'
+
+import type { ChainTransport } from '../types'
 
 // User safe methods
 const methods = [
@@ -32,23 +33,24 @@ const methods = [
 
 type Method = (typeof methods)[number]
 
+type PassthroughMiddlewareConfig = {
+	getChainTransport: () => ChainTransport
+}
+
 /**
  * Creates a middleware which passes through safe requests to a real node
  * @param providerThunk
  */
-export function makePassThroughMiddleware(provider: JsonRpcProvider) {
+export function createPassThroughMiddleware({ getChainTransport }: PassthroughMiddlewareConfig) {
 	const passThroughMiddleware: JsonRpcMiddleware<any, any> =
 		createAsyncMiddleware(async (req, res, next) => {
 			if (methods.includes(req.method as Method)) {
-				try {
-					const result = await provider.send(req.method, req.params)
-
-					res.result = result
-				} catch (e) {
+				const transport = getChainTransport()
+				res.result = await transport.request(req).catch((e) => {
 					console.error('Error!!!', e)
-				}
+				})
 			} else {
-				void next()
+				next()
 			}
 		})
 

@@ -54,7 +54,7 @@ const config: PlaywrightTestConfig = {
 		{
 			command: `pnpm tsx './tests/services/anvil/anvilPoolServer.ts'`,
 			port: 3077,
-			reuseExistingServer: true,
+			reuseExistingServer: false,
 		},
 	],
 }
