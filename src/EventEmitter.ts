@@ -38,4 +38,6 @@ export class EventEmitter {
 
 		return this.on(eventName, cb)
 	}
+
+	removeListener = this.off
 }

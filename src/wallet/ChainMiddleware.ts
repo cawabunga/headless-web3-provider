@@ -2,31 +2,32 @@ import {
 	createAsyncMiddleware,
 	type JsonRpcMiddleware,
 } from '@metamask/json-rpc-engine'
-import type { Chain } from 'viem'
-import type { Hex } from 'viem'
+import type { Chain, Hex } from 'viem'
 
-export function makeNetworkMiddleware(
-	currentChain: Chain,
-	addNetwork: (chain: Chain) => void,
-	switchNetwork: (chainId: number) => void,
-) {
+type ChainMiddlewareConfig = {
+	getChain: () => Chain
+	addChain: (chain: Chain) => void
+	switchChain: (chainId: number) => void
+}
+
+export function createChainMiddleware({ getChain, addChain, switchChain }: ChainMiddlewareConfig) {
 	const middleware: JsonRpcMiddleware<any[], Hex | number | null> =
 		createAsyncMiddleware(async (req, res, next) => {
 			switch (req.method) {
 				case 'eth_chainId': {
-					res.result = `0x${currentChain.id.toString(16)}`
+					res.result = `0x${getChain().id.toString(16)}`
 					break
 				}
 
 				case 'net_version': {
-					res.result = currentChain.id
+					res.result = getChain().id
 					break
 				}
 
 				case 'wallet_addEthereumChain': {
 					const chainId = Number(req.params?.[0]?.chainId)
 					const rpcUrl = req.params?.[0].chainId
-					addNetwork({
+					addChain({
 						id: chainId,
 						rpcUrls: { default: { http: rpcUrl } },
 						name: 'test chain',
@@ -42,13 +43,13 @@ export function makeNetworkMiddleware(
 				}
 
 				case 'wallet_switchEthereumChain': {
-					const chainId = currentChain.id
+					const chainId = getChain().id
 
 					// @ts-expect-error todo: parse params
 					if (chainId !== Number(req.params[0].chainId)) {
 						// @ts-expect-error todo: parse params
 						const chainId = Number(req.params[0].chainId)
-						switchNetwork(chainId)
+						switchChain(chainId)
 					}
 
 					res.result = null

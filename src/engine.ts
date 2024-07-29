@@ -1,30 +1,16 @@
 import { JsonRpcEngine } from '@metamask/json-rpc-engine'
-import { UnsupportedMethod } from './errors'
-import { makeAccountsMiddleware } from './wallet/AccountsMiddleware'
-import type { Account } from 'viem'
-import type { WalletPermissionSystem } from './wallet/WalletPermissionSystem'
-import { makeAuthorizeMiddleware } from './wallet/AuthorizeMiddleware'
-import type { JsonRpcRequest } from './types'
-import { makeNetworkMiddleware } from './wallet/NetworkMiddleware'
-import type { Chain } from 'viem'
-import { makePassThroughMiddleware } from './wallet/PassthroughMiddleware'
-import type { PublicClient } from 'viem'
-import { makePermissionMiddleware } from './wallet/PermissionMiddleware'
-import type { EIP1193Provider } from 'viem'
-import type { JsonRpcProvider } from '@ethersproject/providers'
+import type { Account, Chain } from 'viem'
 
-export function makeRpcEngine({
-	emit,
-	debug,
-	logger,
-	accounts,
-	wps,
-	waitAuthorization,
-	currentChain,
-	addNetwork,
-	switchNetwork,
-	provider,
-}: {
+import { UnsupportedMethod } from './errors'
+import type { ChainTransport, JsonRpcRequest } from './types'
+import { createAccountsMiddleware } from './wallet/AccountsMiddleware'
+import { createAuthorizeMiddleware } from './wallet/AuthorizeMiddleware'
+import { createChainMiddleware } from './wallet/ChainMiddleware'
+import { createPassThroughMiddleware } from './wallet/PassthroughMiddleware'
+import { createPermissionMiddleware } from './wallet/PermissionMiddleware'
+import type { WalletPermissionSystem } from './wallet/WalletPermissionSystem'
+
+type RpcEngineConfig = {
 	emit: (eventName: string, ...args: any[]) => void
 	logger?: (message: string) => void
 	debug?: boolean
@@ -34,26 +20,39 @@ export function makeRpcEngine({
 		req: JsonRpcRequest,
 		task: () => Promise<void>,
 	) => Promise<void>
-	currentChain: Chain
-	addNetwork: (chain: Chain) => void
-	switchNetwork: (chainId: number) => void
-	provider: JsonRpcProvider
-}) {
+	addChain: (chain: Chain) => void
+	switchChain: (chainId: number) => void
+	getChain: () => Chain
+	getChainTransport: () => ChainTransport
+}
+
+export function createRpcEngine({
+	emit,
+	debug,
+	logger,
+	accounts,
+	wps,
+	waitAuthorization,
+	addChain,
+	switchChain,
+	getChain,
+	getChainTransport,
+}: RpcEngineConfig) {
 	const engine = new JsonRpcEngine()
 
-	engine.push((req, res, next) => {
+	engine.push((req, _res, next) => {
 		if (debug) logger?.(`Request: ${req.method}`)
 		next()
 	})
 
-	engine.push(makeAuthorizeMiddleware(waitAuthorization))
-	engine.push(makeAccountsMiddleware(emit, accounts, wps))
+	engine.push(createAuthorizeMiddleware({ waitAuthorization }))
+	engine.push(createAccountsMiddleware({ emit, accounts, wps }))
 
-	engine.push(makeNetworkMiddleware(currentChain, addNetwork, switchNetwork))
-	engine.push(makePermissionMiddleware(emit, accounts))
-	engine.push(makePassThroughMiddleware(provider))
+	engine.push(createChainMiddleware({ getChain, addChain, switchChain }))
+	engine.push(createPermissionMiddleware({ emit, accounts }))
+	engine.push(createPassThroughMiddleware({ getChainTransport }))
 
-	engine.push((req, res, next, end) => {
+	engine.push((_req, _res, _next, end) => {
 		end(UnsupportedMethod())
 	})
 

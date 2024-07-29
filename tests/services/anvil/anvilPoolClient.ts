@@ -1,9 +1,13 @@
-export function getAnvilInstance(): {
+export function getAnvilInstance({
+	workerIndex,
+}: {
+	workerIndex: number
+}): {
 	rpcUrl: string
 	restart: () => Promise<Response>
 } {
 	return {
-		rpcUrl: 'http://localhost:3077/1',
-		restart: () => fetch('http://localhost:3077/1/restart'),
+		rpcUrl: `http://localhost:3077/${workerIndex}`,
+		restart: () => fetch(`http://localhost:3077/${workerIndex}/restart`),
 	}
 }

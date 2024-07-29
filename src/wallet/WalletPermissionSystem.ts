@@ -48,6 +48,8 @@ export class WalletPermissionSystem {
 			caveats: [], // Caveats are not implemented
 		})
 
+		console.log('updatedPermissions', updatedPermissions)
+
 		this.#permissions.set(origin, updatedPermissions)
 	}
 
@@ -71,6 +73,16 @@ export class WalletPermissionSystem {
 		const permissions = this.#permissions.get(origin) || []
 		const wildcardPermissions =
 			this.#permissions.get(this.#wildcardOrigin) || []
+
+		console.log(
+			rpcMethod,
+			permissions.some(
+				(permission) => permission.parentCapability === rpcMethod,
+			) ||
+				wildcardPermissions.some(
+					(permission) => permission.parentCapability === rpcMethod,
+				),
+		)
 
 		return (
 			permissions.some(

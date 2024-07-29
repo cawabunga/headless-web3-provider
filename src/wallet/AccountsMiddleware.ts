@@ -1,16 +1,23 @@
 import {
-	createAsyncMiddleware,
 	type JsonRpcMiddleware,
+	createAsyncMiddleware,
 } from '@metamask/json-rpc-engine'
-import { Web3RequestKind } from '../utils'
-import type { WalletPermissionSystem } from './WalletPermissionSystem'
 import type { Account, Address } from 'viem'
 
-export function makeAccountsMiddleware(
-	emit: (eventName: string, ...args: [Address[]]) => void,
-	accounts: Account[],
-	wps: WalletPermissionSystem,
-) {
+import { Web3RequestKind } from '../utils'
+import type { WalletPermissionSystem } from './WalletPermissionSystem'
+
+type AccountsMiddlewareConfig = {
+	emit: (eventName: string, ...args: [Address[]]) => void
+	accounts: Account[]
+	wps: WalletPermissionSystem
+}
+
+export function createAccountsMiddleware({
+	emit,
+	accounts,
+	wps,
+}: AccountsMiddlewareConfig) {
 	const middleware: JsonRpcMiddleware<[], Address[]> = createAsyncMiddleware(
 		async (req, res, next) => {
 			switch (req.method) {

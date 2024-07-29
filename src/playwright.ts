@@ -1,121 +1,77 @@
 import type { Page } from '@playwright/test'
-import type { Web3ProviderConfig } from './Web3ProviderBackend'
-import { makeHeadlessWeb3Provider } from './factory'
-import type { Chain, EIP1193Provider, Hex } from 'viem'
 import 'viem/window'
 
-type Fn = (...args: any[]) => any
+import { EventEmitter } from './EventEmitter'
+import type { Web3ProviderConfig } from './Web3ProviderBackend'
+import { createHeadlessWeb3Provider } from './factory'
+import type { EvaluateFn } from './types'
 
-export async function injectHeadlessWeb3Provider(
-	page: Page,
-	privateKeys: Hex[],
-	chain: Chain,
-	config?: Web3ProviderConfig,
-) {
-	const evaluate = async <T extends keyof NonNullable<EIP1193Provider>>(
-		method: T,
-		...args: EIP1193Provider[T] extends Fn ? Parameters<EIP1193Provider[T]> : []
-	) => {
+export type InjectHeadlessWeb3ProviderParameters = Web3ProviderConfig & {
+	page: Page
+}
+
+export async function injectHeadlessWeb3Provider({
+	page,
+	...config
+}: InjectHeadlessWeb3ProviderParameters) {
+	const evaluate: EvaluateFn = async (method, ...args) => {
 		return page.evaluate(
 			([method, args]) => {
 				const ethereum = window.ethereum!
 
-				const fn = ethereum[method]
+				const fn = ethereum[method as keyof typeof ethereum]
 				if (typeof fn === 'function') {
-					// @ts-ignore
+					// @ts-expect-error
 					return fn.apply(ethereum, args)
 				}
-				return ethereum[method]
+				return fn
 			},
 			[method, args] as const,
 		)
 	}
 
-	const web3Provider = makeHeadlessWeb3Provider(
-		privateKeys,
-		chain,
-		evaluate,
-		config,
-	)
+	const web3Provider = createHeadlessWeb3Provider({ ...config, evaluate })
+	const injectedRequest: EvaluateFn = async (method, ...args) =>
+		// @ts-expect-error
+		web3Provider[method](...args)
 
 	await page.exposeFunction(
 		'__injectedHeadlessWeb3ProviderRequest',
-		<T extends keyof EIP1193Provider>(
-			method: T,
-			...args: EIP1193Provider[T] extends Fn
-				? Parameters<EIP1193Provider[T]>
-				: []
-		) =>
-			// @ts-expect-error
-			web3Provider[method](...args),
+		injectedRequest,
 	)
+
+	await page.addInitScript({
+		content: `window.EventEmitter = ${EventEmitter.toString()}`,
+	})
 
 	const uuid = crypto.randomUUID()
 
 	await page.addInitScript(
-		(uuid) => {
-			class EventEmitter {
-				private readonly listeners: Record<
-					string,
-					Array<(...args: any[]) => void>
-				> = Object.create(null)
-
-				emit(eventName: string, ...args: any[]): boolean {
-					this.listeners[eventName]?.forEach((listener) => {
-						listener(...args)
-					})
-					return true
-				}
-
-				on(eventName: string, listener: (...args: any[]) => void): this {
-					this.listeners[eventName] ??= []
-					this.listeners[eventName]?.push(listener)
-					return this
-				}
-
-				off(eventName: string, listener: (...args: any[]) => void): this {
-					const listeners = this.listeners[eventName] ?? []
-
-					for (const [i, listener_] of listeners.entries()) {
-						if (listener === listener_) {
-							listeners.splice(i, 1)
-							break
-						}
-					}
-
-					return this
-				}
-
-				once(eventName: string, listener: (...args: any[]) => void): this {
-					const cb = (...args: any[]): void => {
-						this.off(eventName, cb)
-						listener(...args)
-					}
-
-					return this.on(eventName, cb)
-				}
-				removeListener(
-					eventName: string,
-					listener: (...args: any[]) => void,
-				): this {
-					return this.off(eventName, listener)
-				}
-			}
-
+		([uuid]) => {
 			const proxyableMethods = ['request']
 
 			// @ts-expect-error
-			window.ethereum = new Proxy(new EventEmitter(), {
-				get(target: EventEmitter, prop: string): any {
-					if (proxyableMethods.includes(prop)) {
-						return (...args: any[]) => {
-							// @ts-expect-error
-							return window.__injectedHeadlessWeb3ProviderRequest(prop, ...args)
-						}
-					}
+			// biome-ignore lint/suspicious/noImportAssign: EventEmitter does not exist in browser context
+			EventEmitter = window.EventEmitter
 
-					return Reflect.get(target, prop)
-				},
+			Object.defineProperty(window, 'ethereum', {
+				value: new Proxy(new EventEmitter(), {
+					get(target: EventEmitter, prop: string): unknown {
+						if (proxyableMethods.includes(prop)) {
+							return (...args: unknown[]) => {
+								// @ts-expect-error
+								return window.__injectedHeadlessWeb3ProviderRequest(
+									prop,
+									...args,
+								)
+							}
+						}
+
+						return Reflect.get(target, prop)
+					},
+				}),
+				writable: false,
+				configurable: false,
 			})
 			window.dispatchEvent(new Event('ethereum#initialized'))
 
@@ -125,7 +81,7 @@ export async function injectHeadlessWeb3Provider(
 						icon: "data:image/svg+xml,%3Csvg height='99px' width='99px' xmlns='http://www.w3.org/2000/svg' viewBox='0 0 115 182'%3E%3Cpath d='M57.5054 181V135.84L1.64064 103.171L57.5054 181Z' fill='%23F0CDC2' stroke='%231616B4' stroke-linejoin='round'/%3E%3Cpath d='M57.6906 181V135.84L113.555 103.171L57.6906 181Z' fill='%23C9B3F5' stroke='%231616B4' stroke-linejoin='round'/%3E%3Cpath d='M57.5055 124.615V66.9786L1 92.2811L57.5055 124.615Z' fill='%2388AAF1' stroke='%231616B4' stroke-linejoin='round'/%3E%3Cpath d='M57.6903 124.615V66.9786L114.196 92.2811L57.6903 124.615Z' fill='%23C9B3F5' stroke='%231616B4' stroke-linejoin='round'/%3E%3Cpath d='M1.00006 92.2811L57.5054 1V66.9786L1.00006 92.2811Z' fill='%23F0CDC2' stroke='%231616B4' stroke-linejoin='round'/%3E%3Cpath d='M114.196 92.2811L57.6906 1V66.9786L114.196 92.2811Z' fill='%23B8FAF6' stroke='%231616B4' stroke-linejoin='round'/%3E%3C/svg%3E",
 						name: 'Headless Web3 Provider',
 						rdns: 'headless-web3-provider',
-						uuid: uuid,
+						uuid,
 					},
 					provider: window.ethereum,
 				}),
@@ -135,8 +91,6 @@ export async function injectHeadlessWeb3Provider(
 
 			const handler = () => window.dispatchEvent(event)
 			window.addEventListener('eip6963:requestProvider', handler)
-			return () =>
-				window.removeEventListener('eip6963:requestProvider', handler)
 		},
 		[uuid],
 	)

@@ -1,14 +1,20 @@
 import {
-	createAsyncMiddleware,
 	type JsonRpcMiddleware,
+	createAsyncMiddleware,
 } from '@metamask/json-rpc-engine'
-import { Deny } from '../errors'
 import type { Account } from 'viem'
 
-export function makePermissionMiddleware(
-	emit: (eventName: string, ...args: any[]) => void,
-	accounts: Account[],
-) {
+import { Deny } from '../errors'
+
+type PermissionMiddlewareConfig = {
+	emit: (eventName: string, ...args: any[]) => void
+	accounts: Account[]
+}
+
+export function createPermissionMiddleware({
+	emit,
+	accounts,
+}: PermissionMiddlewareConfig) {
 	const middleware: JsonRpcMiddleware<
 		{ eth_accounts?: string }[],
 		[{ parentCapability: 'eth_accounts' }]

@@ -1,7 +1,8 @@
 import {
-	createAsyncMiddleware,
 	type JsonRpcMiddleware,
+	createAsyncMiddleware,
 } from '@metamask/json-rpc-engine'
+
 import type { JsonRpcRequest } from '../types'
 
 // User un-safe methods
@@ -19,19 +20,23 @@ const methods = [
 	'eth_signTypedData_v4',
 ]
 
+type AuthorizeMiddlewareConfig = {
+	waitAuthorization: (
+		req: JsonRpcRequest,
+		task: () => Promise<void>,
+	) => Promise<void>
+}
+
 /**
  * Creates a middleware which stops user-specific methods from being
  * sent until the user has authorized them
  * @param waitAuthorization
  */
-export function makeAuthorizeMiddleware(
-	waitAuthorization: (
-		req: JsonRpcRequest,
-		task: () => Promise<void>,
-	) => Promise<void>,
-) {
+export function createAuthorizeMiddleware({
+	waitAuthorization,
+}: AuthorizeMiddlewareConfig) {
 	const authorizeMiddleware: JsonRpcMiddleware<string[], string[]> =
-		createAsyncMiddleware(async (req, res, next) => {
+		createAsyncMiddleware(async (req, _res, next) => {
 			if (methods.includes(req.method)) {
 				// Pass `next` to the authorization handler.
 				// This is necessary because many tests simulate authorization by calling:
