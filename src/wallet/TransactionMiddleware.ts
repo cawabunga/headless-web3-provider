@@ -14,18 +14,25 @@ import {
 } from 'viem'
 import type { ChainTransport } from '../types.js'
 
-type JsonRpcTx = {
+type TxBase = {
+	type?: Hex
 	from: Address
 	to: Address
 	value: Hex
 	gasLimit: Hex
-	gasPrice?: Hex
-	type: Hex
-	maxFeePerGas?: Hex
-	maxPriorityFeePerGas?: Hex
 }
 
-export const toViemTx = (tx: JsonRpcTx): TransactionRequest => {
+type LegacyTx = TxBase & { type: '0x0'; gasPrice: Hex }
+type EIP1559Tx = TxBase & {
+	maxFeePerGas: Hex
+	maxPriorityFeePerGas: Hex
+}
+
+function isLegacyTransaction(tx: LegacyTx | EIP1559Tx): tx is LegacyTx {
+	return tx.type === '0x0'
+}
+
+export const toViemTx = (tx: LegacyTx | EIP1559Tx): TransactionRequest => {
 	const base = {
 		from: tx.from,
 		to: tx.to,
@@ -33,20 +40,18 @@ export const toViemTx = (tx: JsonRpcTx): TransactionRequest => {
 		gas: hexToBigInt(tx.gasLimit),
 	}
 
-	if (tx.type === '0x0') {
+	if (isLegacyTransaction(tx)) {
 		return {
 			...base,
 			type: 'legacy',
-			gasPrice: hexToBigInt(tx.gasPrice!),
+			gasPrice: hexToBigInt(tx.gasPrice),
 		} as TransactionRequest
 	}
 	return {
 		...base,
 		type: 'eip1559',
-		maxFeePerGas: tx.maxFeePerGas ? hexToBigInt(tx.maxFeePerGas) : undefined,
-		maxPriorityFeePerGas: tx.maxPriorityFeePerGas
-			? hexToBigInt(tx.maxPriorityFeePerGas)
-			: undefined,
+		maxFeePerGas: hexToBigInt(tx.maxFeePerGas),
+		maxPriorityFeePerGas: hexToBigInt(tx.maxPriorityFeePerGas),
 	}
 }
 
