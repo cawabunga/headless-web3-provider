@@ -41,7 +41,9 @@ type PassthroughMiddlewareConfig = {
  * Creates a middleware which passes through safe requests to a real node
  * @param providerThunk
  */
-export function createPassThroughMiddleware({ getChainTransport }: PassthroughMiddlewareConfig) {
+export function createPassThroughMiddleware({
+	getChainTransport,
+}: PassthroughMiddlewareConfig) {
 	const passThroughMiddleware: JsonRpcMiddleware<any, any> =
 		createAsyncMiddleware(async (req, res, next) => {
 			if (methods.includes(req.method as Method)) {

@@ -24,9 +24,9 @@
 	"homepage": "https://github.com/cawabunga/headless-web3-provider#readme",
 	"scripts": {
 		"test": "playwright test --ui",
-		"watch": "parcel watch",
-		"build": "parcel build --no-optimize",
-		"prettify": "prettier --write '**/*.ts'"
+		"build": "tsc",
+		"check": "biome check .",
+		"fmt": "biome format"
 	},
 	"dependencies": {
 		"@metamask/json-rpc-engine": "^9.0.0",
@@ -36,11 +36,8 @@
 	"devDependencies": {
 		"@biomejs/biome": "^1.8.3",
 		"@parcel/packager-ts": "2.12.0",
-		"@parcel/transformer-typescript-types": "^2.12.0",
 		"@playwright/test": "^1.45.1",
 		"@types/node": "^20.14.9",
-		"generic-pool": "^3.9.0",
-		"parcel": "^2.12.0",
 		"prool": "^0.0.15",
 		"tsx": "^4.16.2",
 		"typescript": "~5.5.3"

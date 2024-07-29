@@ -10,7 +10,11 @@ type ChainMiddlewareConfig = {
 	switchChain: (chainId: number) => void
 }
 
-export function createChainMiddleware({ getChain, addChain, switchChain }: ChainMiddlewareConfig) {
+export function createChainMiddleware({
+	getChain,
+	addChain,
+	switchChain,
+}: ChainMiddlewareConfig) {
 	const middleware: JsonRpcMiddleware<any[], Hex | number | null> =
 		createAsyncMiddleware(async (req, res, next) => {
 			switch (req.method) {
