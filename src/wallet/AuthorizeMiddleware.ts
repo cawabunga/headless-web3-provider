@@ -3,7 +3,7 @@ import {
 	createAsyncMiddleware,
 } from '@metamask/json-rpc-engine'
 
-import type { JsonRpcRequest } from '../types'
+import type { JsonRpcRequest } from '../types.js'
 
 // User un-safe methods
 const methods = [

@@ -10,12 +10,12 @@ import {
 import { privateKeyToAccount } from 'viem/accounts'
 
 import type { Json } from '@metamask/utils'
-import { EventEmitter } from './EventEmitter'
-import { createRpcEngine } from './engine'
-import { ChainDisconnected, Deny, type ErrorWithCode } from './errors'
-import type { ChainTransport, JsonRpcRequest, PendingRequest } from './types'
-import type { Web3RequestKind } from './utils'
-import { WalletPermissionSystem } from './wallet/WalletPermissionSystem'
+import { EventEmitter } from './EventEmitter.js'
+import { createRpcEngine } from './engine.js'
+import { ChainDisconnected, Deny, type ErrorWithCode } from './errors.js'
+import type { ChainTransport, JsonRpcRequest, PendingRequest } from './types.js'
+import type { Web3RequestKind } from './utils.js'
+import { WalletPermissionSystem } from './wallet/WalletPermissionSystem.js'
 
 export interface Web3ProviderConfig {
 	privateKeys: Hex[]

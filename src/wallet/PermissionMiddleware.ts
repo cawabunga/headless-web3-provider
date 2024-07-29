@@ -4,7 +4,7 @@ import {
 } from '@metamask/json-rpc-engine'
 import type { Account } from 'viem'
 
-import { Deny } from '../errors'
+import { Deny } from '../errors.js'
 
 type PermissionMiddlewareConfig = {
 	emit: (eventName: string, ...args: any[]) => void

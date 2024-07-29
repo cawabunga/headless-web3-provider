@@ -1,6 +1,6 @@
 // EIP-2255: Wallet Permissions System (https://eips.ethereum.org/EIPS/eip-2255)
 
-import type { Web3RequestKind } from '../utils'
+import type { Web3RequestKind } from '../utils.js'
 
 // Caveat for `eth_accounts` could be:
 // { "type": "requiredMethods", "value": ["signTypedData_v3"] }

@@ -4,8 +4,8 @@ import {
 } from '@metamask/json-rpc-engine'
 import type { Account, Address } from 'viem'
 
-import { Web3RequestKind } from '../utils'
-import type { WalletPermissionSystem } from './WalletPermissionSystem'
+import { Web3RequestKind } from '../utils.js'
+import type { WalletPermissionSystem } from './WalletPermissionSystem.js'
 
 type AccountsMiddlewareConfig = {
 	emit: (eventName: string, ...args: [Address[]]) => void

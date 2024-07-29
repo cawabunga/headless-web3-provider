@@ -1,10 +1,10 @@
 import type { Page } from '@playwright/test'
 import 'viem/window'
 
-import { EventEmitter } from './EventEmitter'
-import type { Web3ProviderConfig } from './Web3ProviderBackend'
-import { createHeadlessWeb3Provider } from './factory'
-import type { EvaluateFn } from './types'
+import { EventEmitter } from './EventEmitter.js'
+import type { Web3ProviderConfig } from './Web3ProviderBackend.js'
+import { createHeadlessWeb3Provider } from './factory.js'
+import type { EvaluateFn } from './types.js'
 
 export type InjectHeadlessWeb3ProviderParameters = Web3ProviderConfig & {
 	page: Page

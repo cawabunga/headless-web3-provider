@@ -1,4 +1,4 @@
-export { createHeadlessWeb3Provider } from './factory'
-export { injectHeadlessWeb3Provider } from './playwright'
-export { Web3RequestKind } from './utils'
-export { Web3ProviderBackend } from './Web3ProviderBackend'
+export { createHeadlessWeb3Provider } from './factory.js'
+export { injectHeadlessWeb3Provider } from './playwright.js'
+export { Web3RequestKind } from './utils.js'
+export { Web3ProviderBackend } from './Web3ProviderBackend.js'

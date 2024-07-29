@@ -3,7 +3,7 @@ import {
 	type JsonRpcMiddleware,
 } from '@metamask/json-rpc-engine'
 
-import type { ChainTransport } from '../types'
+import type { ChainTransport } from '../types.js'
 
 // User safe methods
 const methods = [

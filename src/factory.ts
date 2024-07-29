@@ -1,9 +1,9 @@
-import type { EventEmitter } from './EventEmitter'
-import type { EvaluateFn } from './types'
+import type { EventEmitter } from './EventEmitter.js'
+import type { EvaluateFn } from './types.js'
 import {
 	Web3ProviderBackend,
 	type Web3ProviderConfig,
-} from './Web3ProviderBackend'
+} from './Web3ProviderBackend.js'
 
 type CreateHeadlessWeb3ProviderParameters = Web3ProviderConfig & {
 	evaluate?: EvaluateFn
