@@ -25,6 +25,5 @@ export class ErrorWithCode extends Error {
 		public code?: number,
 	) {
 		super(message)
-		return this
 	}
 }

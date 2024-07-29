@@ -64,7 +64,6 @@ export class Web3ProviderBackend
 
 	// @ts-expect-error
 	async request(req: EIP1193Parameters): Promise<Json> {
-		console.log('request', req.method)
 		const res = await this.engine
 			.handle({
 				method: req.method,
@@ -78,11 +77,8 @@ export class Web3ProviderBackend
 			})
 
 		if ('result' in res) {
-			console.log('respond', res.result)
 			return res.result
 		}
-
-		console.log('going to throw', res.error)
 
 		throw res.error
 	}

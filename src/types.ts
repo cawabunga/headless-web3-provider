@@ -1,4 +1,9 @@
-import type { EIP1193Parameters, EIP1474Methods, Transport } from 'viem'
+import type {
+	EIP1193Parameters,
+	EIP1193Provider,
+	EIP1474Methods,
+	Transport,
+} from 'viem'
 
 import type { Web3ProviderBackendType } from './Web3ProviderBackend.js'
 
@@ -19,3 +24,6 @@ export type EvaluateFn = <T extends keyof Web3ProviderBackendType>(
 ) => Promise<void>
 
 export type ChainTransport = ReturnType<Transport>
+
+export type WindowEthereum = Window &
+	typeof globalThis & { ethereum: EIP1193Provider }

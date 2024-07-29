@@ -1,10 +1,9 @@
 import type { Page } from '@playwright/test'
-import 'viem/window'
 
 import { EventEmitter } from './EventEmitter.js'
 import type { Web3ProviderConfig } from './Web3ProviderBackend.js'
 import { createHeadlessWeb3Provider } from './factory.js'
-import type { EvaluateFn } from './types.js'
+import type { EvaluateFn, WindowEthereum } from './types.js'
 
 export type InjectHeadlessWeb3ProviderParameters = Web3ProviderConfig & {
 	page: Page
@@ -17,7 +16,7 @@ export async function injectHeadlessWeb3Provider({
 	const evaluate: EvaluateFn = async (method, ...args) => {
 		return page.evaluate(
 			([method, args]) => {
-				const ethereum = window.ethereum!
+				const ethereum = (window as WindowEthereum).ethereum
 
 				const fn = ethereum[method as keyof typeof ethereum]
 				if (typeof fn === 'function') {
@@ -83,7 +82,7 @@ export async function injectHeadlessWeb3Provider({
 						rdns: 'headless-web3-provider',
 						uuid,
 					},
-					provider: window.ethereum,
+					provider: (window as WindowEthereum).ethereum,
 				}),
 			})
 

@@ -1,8 +1,9 @@
 import type { Page } from '@playwright/test'
 import { type Address, privateKeyToAccount } from 'viem/accounts'
 
-import { Web3RequestKind } from '../../src/index.ts'
-import { expect, test } from '../fixtures.ts'
+import { Web3RequestKind } from '../../src/index.js'
+import { expect, test } from '../fixtures.js'
+import 'viem/window'
 
 test('connect the wallet', async ({ page, accounts, wallet }) => {
 	// Until the wallet is connected, the accounts should be empty
@@ -33,16 +34,9 @@ test('connect the wallet', async ({ page, accounts, wallet }) => {
 
 	// After connecting the wallet, the accounts should be available
 	ethAccounts = await page.evaluate(() =>
-		window
-			.ethereum!.request({
-				method: 'eth_accounts',
-			})
-			.catch((e) => {
-				console.log('would throw', e)
-				console.log(window.ethereum.isMetaMask)
-				console.log(window.ethereum.isConnected())
-				console.log(window.ethereum)
-			}),
+		window.ethereum!.request({
+			method: 'eth_accounts',
+		}),
 	)
 	expect(ethAccounts).toEqual(accounts)
 })

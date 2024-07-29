@@ -5,7 +5,8 @@
 			"node_modules",
 			"test-results",
 			"playwright-report",
-			"package.json"
+			"package.json",
+			"dist"
 		]
 	},
 	"organizeImports": {

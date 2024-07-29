@@ -1,15 +1,20 @@
-import { type Web3ProviderBackend, Web3RequestKind } from '../../src.ts'
-import { describe, expect, test } from '../fixtures.ts'
+import { type Web3ProviderBackend, Web3RequestKind } from '../../src/index.js'
+import { describe, expect, test } from '../fixtures.js'
 
 let _wallet: Web3ProviderBackend
 
 describe('Auto connected', () => {
 	test.beforeEach(async ({ page, injectWeb3Provider }) => {
 		// Inject window.ethereum instance
-		_wallet = await injectWeb3Provider({ permitted: [Web3RequestKind.Accounts] })
+		_wallet = await injectWeb3Provider({
+			permitted: [Web3RequestKind.Accounts],
+		})
 
-		// In order to make https://metamask.github.io/test-dapp/ work flag should be set
-		await page.addInitScript(() => (window.ethereum.isMetaMask = true))
+		await page.addInitScript(
+			// @ts-expect-error
+			// biome-ignore lint/suspicious/noAssignInExpressions: In order to make https://metamask.github.io/test-dapp work
+			() => (window.ethereum!.isMetaMask = true),
+		)
 
 		await page.goto('https://metamask.github.io/test-dapp/')
 	})

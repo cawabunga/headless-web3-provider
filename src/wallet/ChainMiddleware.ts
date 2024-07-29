@@ -1,6 +1,6 @@
 import {
-	createAsyncMiddleware,
 	type JsonRpcMiddleware,
+	createAsyncMiddleware,
 } from '@metamask/json-rpc-engine'
 import type { Chain, Hex } from 'viem'
 

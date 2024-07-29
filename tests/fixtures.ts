@@ -49,9 +49,7 @@ export const test = base.extend<{
 	},
 
 	wallet: [
-		async ({ injectWeb3Provider, page }, use, asd) => {
-			console.log(asd.workerIndex)
-
+		async ({ injectWeb3Provider, page }, use) => {
 			// Inject window.ethereum instance
 			const wallet = await injectWeb3Provider()
 
