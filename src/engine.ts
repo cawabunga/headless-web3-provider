@@ -9,6 +9,7 @@ import { createChainMiddleware } from './wallet/ChainMiddleware.js'
 import { createPassThroughMiddleware } from './wallet/PassthroughMiddleware.js'
 import { createPermissionMiddleware } from './wallet/PermissionMiddleware.js'
 import { createSignMessageMiddleware } from './wallet/SignMessageMiddleware.js'
+import { createTransactionMiddleware } from './wallet/TransactionMiddleware.js'
 import type { WalletPermissionSystem } from './wallet/WalletPermissionSystem.js'
 
 type RpcEngineConfig = {
@@ -50,6 +51,13 @@ export function createRpcEngine({
 	engine.push(createAccountsMiddleware({ emit, accounts, wps }))
 	engine.push(createSignMessageMiddleware({ account: accounts[0] }))
 	engine.push(createChainMiddleware({ getChain, addChain, switchChain }))
+	engine.push(
+		createTransactionMiddleware({
+			getChain,
+			account: accounts[0],
+			getChainTransport,
+		}),
+	)
 	engine.push(createPermissionMiddleware({ emit, accounts }))
 	engine.push(createPassThroughMiddleware({ getChainTransport }))
 
