@@ -9,8 +9,8 @@ import {
 	type Hex,
 	type LocalAccount,
 	type TransactionRequest,
-	type TransactionRequestBase,
 	createWalletClient,
+	hexToBigInt,
 } from 'viem'
 import type { ChainTransport } from '../types.js'
 
@@ -19,34 +19,33 @@ type JsonRpcTx = {
 	to: Address
 	value: Hex
 	gasLimit: Hex
-	gasPrice: Hex
+	gasPrice?: Hex
 	type: Hex
 	maxFeePerGas?: Hex
 	maxPriorityFeePerGas?: Hex
 }
 
-const jsonRpctxTypeToViemTxType = (txType: Hex): 'legacy' | undefined => {
-	switch (txType) {
-		case '0x0':
-			return 'legacy'
-		default:
-			return undefined
-	}
-}
-
-export const toViemTx = (tx: JsonRpcTx): TransactionRequest<bigint> => {
-	// @ts-expect-error too lazy to figure out type error
-	return {
-		...tx,
+export const toViemTx = (tx: JsonRpcTx): TransactionRequest => {
+	const base = {
 		from: tx.from,
 		to: tx.to,
-		value: BigInt(tx.value),
-		gas: BigInt(tx.gasLimit),
-		gasPrice: BigInt(tx.gasPrice),
-		type: jsonRpctxTypeToViemTxType(tx.type),
-		maxFeePerGas: tx.maxFeePerGas ? BigInt(tx.maxFeePerGas) : undefined,
+		value: hexToBigInt(tx.value),
+		gas: hexToBigInt(tx.gasLimit),
+	}
+
+	if (tx.type === '0x0') {
+		return {
+			...base,
+			type: 'legacy',
+			gasPrice: hexToBigInt(tx.gasPrice!),
+		} as TransactionRequest
+	}
+	return {
+		...base,
+		type: 'eip1559',
+		maxFeePerGas: tx.maxFeePerGas ? hexToBigInt(tx.maxFeePerGas) : undefined,
 		maxPriorityFeePerGas: tx.maxPriorityFeePerGas
-			? BigInt(tx.maxPriorityFeePerGas)
+			? hexToBigInt(tx.maxPriorityFeePerGas)
 			: undefined,
 	}
 }
@@ -67,13 +66,18 @@ export function createTransactionMiddleware({
 					// @ts-expect-error todo: parse params
 					const jsonRpcTx = req.params[0] as JsonRpcTx
 
-					console.log(jsonRpcTx)
+					let viemTx!: TransactionRequest
+					try {
+						viemTx = toViemTx(jsonRpcTx)
+					} catch (e) {
+						console.error('Error parsing tx', e)
+					}
 
 					const tx = await createWalletClient({
 						account,
 						chain: getChain(),
 						transport: getChainTransport,
-					}).sendTransaction(toViemTx(jsonRpcTx))
+					}).sendTransaction(viemTx)
 
 					res.result = tx
 					break
