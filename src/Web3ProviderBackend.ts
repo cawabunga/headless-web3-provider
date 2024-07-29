@@ -1,11 +1,11 @@
 import type { JsonRpcEngine } from '@metamask/json-rpc-engine'
 import {
 	http,
-	type LocalAccount,
 	type Chain,
 	type EIP1193Parameters,
 	type EIP1193Provider,
 	type Hex,
+	type LocalAccount,
 } from 'viem'
 import { privateKeyToAccount } from 'viem/accounts'
 
