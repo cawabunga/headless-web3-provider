@@ -1,5 +1,5 @@
 {
-	"name": "headless-web3-provider",
+	"name": "@ensdomains/headless-web3-provider",
 	"version": "0.0.0",
 	"description": "Headless MetaMask for testing Ethereum apps",
 	"author": "v1rtl <hi@v1rtl.site>",
