@@ -1,9 +1,9 @@
 import type { Page } from '@playwright/test'
 import { type Address, privateKeyToAccount } from 'viem/accounts'
 
-import { Web3RequestKind } from '../../src/index.js'
 import { expect, test } from '../fixtures.js'
 import 'viem/window'
+import { Web3RequestKind } from '../../src/utils.js'
 
 test('connect the wallet', async ({ page, accounts, wallet }) => {
 	// Until the wallet is connected, the accounts should be empty

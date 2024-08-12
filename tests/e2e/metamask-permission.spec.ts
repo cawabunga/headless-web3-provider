@@ -1,4 +1,5 @@
-import { type Web3ProviderBackend, Web3RequestKind } from '../../src/index.js'
+import type { Web3ProviderBackend } from '../../src/backend.js'
+import { Web3RequestKind } from '../../src/utils.js'
 import { describe, expect, test } from '../fixtures.js'
 
 let _wallet: Web3ProviderBackend

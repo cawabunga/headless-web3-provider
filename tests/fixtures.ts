@@ -3,11 +3,9 @@ import type { Address, Hex } from 'viem'
 import { privateKeyToAddress } from 'viem/accounts'
 import { anvil } from 'viem/chains'
 
-import type { Web3ProviderConfig } from '../src/Web3ProviderBackend.js'
-import {
-	type Web3ProviderBackend,
-	injectHeadlessWeb3Provider,
-} from '../src/index.js'
+import type { Web3ProviderConfig } from '../src/backend.js'
+import type { Web3ProviderBackend } from '../src/backend.js'
+import { injectHeadlessWeb3Provider } from '../src/playwright.js'
 import { getAnvilInstance } from './services/anvil/anvilPoolClient.js'
 
 type InjectWeb3Provider = (

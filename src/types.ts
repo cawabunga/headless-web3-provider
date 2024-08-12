@@ -5,7 +5,7 @@ import type {
 	Transport,
 } from 'viem'
 
-import type { Web3ProviderBackendType } from './Web3ProviderBackend.js'
+import type { Web3ProviderBackendType } from './backend.js'
 
 export type JsonRpcRequest = EIP1193Parameters<EIP1474Methods>
 

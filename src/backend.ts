@@ -31,32 +31,32 @@ export class Web3ProviderBackend
 	extends EventEmitter
 	implements EIP1193Provider
 {
-	private accounts: LocalAccount[] = []
-	private activeChain: Chain
-	private chains: Chain[] = []
-	private wps: WalletPermissionSystem
-	private pendingRequests: PendingRequest[] = []
-	private pendingActions: {
+	#accounts: LocalAccount[] = []
+	#activeChain: Chain
+	#chains: Chain[] = []
+	#wps: WalletPermissionSystem
+	#pendingRequests: PendingRequest[] = []
+	#pendingActions: {
 		method: Web3RequestKind
 		type: 'authorize' | 'reject'
 		notify: () => Promise<void>
 	}[] = []
-	private engine: JsonRpcEngine
+	#engine: JsonRpcEngine
 
 	constructor({ privateKeys, chains, ...config }: Web3ProviderConfig) {
 		super()
-		this.activeChain = chains[0]
-		this.chains = chains
+		this.#activeChain = chains[0]
+		this.#chains = chains
 
-		privateKeys.forEach((pk) => this.accounts.push(privateKeyToAccount(pk)))
+		privateKeys.forEach((pk) => this.#accounts.push(privateKeyToAccount(pk)))
 
-		this.wps = new WalletPermissionSystem(config.permitted)
-		this.engine = createRpcEngine({
+		this.#wps = new WalletPermissionSystem(config.permitted)
+		this.#engine = createRpcEngine({
 			emit: (eventName, ...args) => this.emit(eventName, ...args),
 			debug: config.debug,
 			logger: config.logger,
-			wps: this.wps,
-			accounts: this.accounts,
+			wps: this.#wps,
+			accounts: this.#accounts,
 			waitAuthorization: (req, task) => this.waitAuthorization(req, task),
 			addChain: (chain) => this.addChain(chain),
 			switchChain: (chainId) => this.switchChain(chainId),
@@ -69,7 +69,7 @@ export class Web3ProviderBackend
 
 	// @ts-expect-error
 	async request(req: EIP1193Parameters): Promise<Json> {
-		const res = await this.engine
+		const res = await this.#engine
 			.handle({
 				method: req.method,
 				params: req.params as `0x${string}`[],
@@ -89,33 +89,33 @@ export class Web3ProviderBackend
 	}
 
 	isConnected() {
-		const perm = this.wps.isPermitted('eth_accounts', '')
+		const perm = this.#wps.isPermitted('eth_accounts', '')
 		return perm
 	}
 
 	getChainIds() {
-		return this.chains.map((chain) => chain.id)
+		return this.#chains.map((chain) => chain.id)
 	}
 
 	getChain() {
-		return this.activeChain
+		return this.#activeChain
 	}
 
 	addChain(chain: Chain) {
-		this.chains.push(chain)
+		this.#chains.push(chain)
 	}
 
 	switchChain(chainId: number): void {
-		const chain = this.chains.find(({ id }) => id === chainId)
+		const chain = this.#chains.find(({ id }) => id === chainId)
 		if (!chain) {
 			throw ChainDisconnected()
 		}
-		this.activeChain = chain
+		this.#activeChain = chain
 		this.emit('chainChanged', chainId)
 	}
 
 	getPendingRequestCount(requestKind?: Web3RequestKind): number {
-		const pendingRequests = this.pendingRequests
+		const pendingRequests = this.#pendingRequests
 		if (requestKind == null) {
 			return pendingRequests.length
 		}
@@ -126,14 +126,14 @@ export class Web3ProviderBackend
 	}
 
 	private consumeRequest(requestKind: Web3RequestKind) {
-		const requestIndex = this.pendingRequests.findIndex((request) => {
+		const requestIndex = this.#pendingRequests.findIndex((request) => {
 			return request.requestInfo.method === requestKind
 		})
 
 		// If found, remove it from the pendingRequests array
 		if (requestIndex !== -1) {
-			const request = this.pendingRequests[requestIndex]
-			this.pendingRequests.splice(requestIndex, 1)
+			const request = this.#pendingRequests[requestIndex]
+			this.#pendingRequests.splice(requestIndex, 1)
 
 			return request
 		}
@@ -142,13 +142,13 @@ export class Web3ProviderBackend
 	}
 
 	private consumeAction(requestKind: Web3RequestKind) {
-		const actionIndex = this.pendingActions.findIndex(
+		const actionIndex = this.#pendingActions.findIndex(
 			(act) => act.method === requestKind,
 		)
 
 		if (actionIndex !== -1) {
-			const action = this.pendingActions[actionIndex]
-			this.pendingActions.splice(actionIndex, 1)
+			const action = this.#pendingActions[actionIndex]
+			this.#pendingActions.splice(actionIndex, 1)
 
 			return action
 		}
@@ -170,7 +170,7 @@ export class Web3ProviderBackend
 				resolve(callback?.())
 			}
 
-			this.pendingActions.push({ method: requestKind, type, notify })
+			this.#pendingActions.push({ method: requestKind, type, notify })
 		})
 	}
 
@@ -198,21 +198,22 @@ export class Web3ProviderBackend
 	}
 
 	private getChainTransport(): ChainTransport {
-		const chain = this.activeChain
+		const chain = this.#activeChain
 
 		const transport = http(chain.rpcUrls.default.http[0])({ chain })
 
 		return transport
 	}
 
-	waitAuthorization<T>(req: JsonRpcRequest, task: () => Promise<T>) {
-		if (this.wps.isPermitted(req.method, '')) {
+	async waitAuthorization<T>(req: JsonRpcRequest, task: () => Promise<T>) {
+		if (this.#wps.isPermitted(req.method, '')) {
 			return task()
 		}
 
 		const action = this.consumeAction(req.method as Web3RequestKind)
 		if (action) {
-			return task().then(() => action.notify())
+			await task()
+			return await action.notify()
 		}
 
 		return new Promise<T>((resolve, reject) => {
@@ -226,8 +227,8 @@ export class Web3ProviderBackend
 				},
 			}
 
-			this.pendingRequests.push(pendingRequest)
-			return this.pendingRequests
+			this.#pendingRequests.push(pendingRequest)
+			return this.#pendingRequests
 		})
 	}
 }

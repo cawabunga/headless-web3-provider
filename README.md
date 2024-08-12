@@ -1,13 +1,15 @@
 # Headless Web3 Provider
 
-[![Playwright Tests](https://github.com/cawabunga/headless-web3-provider/actions/workflows/playwright.yml/badge.svg)](https://github.com/cawabunga/headless-web3-provider/actions/workflows/playwright.yml) ![NPM Downloads](https://img.shields.io/npm/dw/headless-web3-provider)
+[![Playwright Tests](https://github.com/ensdomains/headless-web3-provider/actions/workflows/ci.yml/badge.svg)](https://github.com/ensdomains/headless-web3-provider/actions/workflows/ci.yml) ![NPM Downloads](https://img.shields.io/npm/dw/headless-web3-provider)
 
-Upgrade your E2E tests with `headless-web3-provider` - the Metamask replacement for Ethereum-based apps. No visual interface needed, control transactions directly from your code!
+> headless-web3-provider fork by ENS. It uses [viem](https://viem.sh), has fewer dependencies and supports EIP-6963 (ported from [this PR](https://github.com/cawabunga/headless-web3-provider/pull/21)).
 
-## Installation
+Headless MetaMask for testing Ethereum apps.
+
+## Install
 
 ```shell
-npm i -D headless-web3-provider
+pnpm i -D @ensdomains/headless-web3-provider viem
 ```
 
 ## About
@@ -49,7 +51,8 @@ Setup (add a fixture):
 ```js
 // tests/fixtures.js
 import { test as base } from '@playwright/test'
-import { injectHeadlessWeb3Provider } from 'headless-web3-provider'
+import { injectHeadlessWeb3Provider } from '@ensdomains/headless-web3-provider/playwright'
+import { anvil } from 'viem/chains'
 
 export const test = base.extend({
   // signers - the private keys that are to be used in the tests
@@ -60,9 +63,7 @@ export const test = base.extend({
     await use((page, privateKeys = signers) =>
       injectHeadlessWeb3Provider(
         page,
-        privateKeys, // Private keys that you want to use in tests
-        31337, // Chain ID - 31337 is common testnet id
-        'http://localhost:8545' // Ethereum client's JSON-RPC URL
+       { privateKeys, chains: [anvil] }
       )
     )
   },
@@ -94,99 +95,3 @@ test('connect the wallet', async ({ page, injectWeb3Provider }) => {
     .toBeVisible()
 })
 ```
-
-### Jest
-
-Add a helper script for injecting the ethereum provider instance.
-
-```ts
-// tests/web3-helper.ts
-import { Wallet } from 'ethers'
-import {
-  makeHeadlessWeb3Provider,
-  Web3ProviderBackend,
-} from 'headless-web3-provider'
-
-/**
- * injectWeb3Provider - Function to create and inject web3 provider instance into the global window object
- *
- * @returns {Array} An array containing the wallets and the web3Provider instance
- */
-export function injectWeb3Provider(): [
-  [Wallet, ...Wallet[]],
-  Web3ProviderBackend
-] {
-  // Create 2 random instances of Wallet class
-  const wallets = Array(2)
-    .fill(0)
-    .map(() => Wallet.createRandom()) as [Wallet, Wallet]
-
-  // Create an instance of the Web3ProviderBackend class
-  let web3Manager: Web3ProviderBackend = makeHeadlessWeb3Provider(
-    wallets.map((wallet) => wallet.privateKey),
-    31337, // Chain ID - 31337 or  is a common testnet id
-    'http://localhost:8545' // Ethereum client's JSON-RPC URL
-  )
-
-  // Expose the web3Provider instance to the global window object
-  // @ts-ignore-error
-  window.ethereum = web3Manager
-
-  // Return the created wallets and web3Provider instance
-  return [wallets, web3Manager]
-}
-```
-
-```ts
-// AccountConnect.test.ts
-import { act, render, screen } from '@testing-library/react'
-import type { Wallet } from 'ethers'
-import { Web3ProviderBackend, Web3RequestKind } from 'headless-web3-provider'
-import userEvent from '@testing-library/user-event'
-import { injectWeb3Provider } from 'tests/web3-helper' // Our just created helper script
-import AccountConnect from './AccountConnect'
-
-describe('<AccountConnect />', () => {
-  let wallets: [Wallet, ...Wallet[]]
-  let web3Manager: Web3ProviderBackend
-
-  beforeEach(() => {
-    // Inject window.ethereum instance
-    ;[wallets, web3Manager] = injectWeb3Provider()
-  })
-
-  it('renders user address after connecting', async () => {
-    render(<AccountConnect />)
-
-    // Request connecting the wallet
-    await userEvent.click(
-      screen.getByRole('button', { name: /connect wallet/i })
-    )
-
-    // Verify if the wallet is NOT yet connected
-    expect(screen.queryByText(wallets[0].address)).not.toBeInTheDocument()
-
-    await act(async () => {
-      // You can either authorize or reject the request
-      await web3Manager.authorize(Web3RequestKind.RequestAccounts)
-    })
-
-    // Verify if the wallet is connected
-    expect(screen.getByText(wallets[0].address)).toBeInTheDocument()
-  })
-})
-```
-
-## Additional Tools
-
-Enhance your testing environment with these complementary tools that integrate seamlessly with `headless-web3-provider`:
-
-- [Foundry Anvil](https://book.getfoundry.sh/anvil/) - a dev chain platform ideal for testing your applications against.
-
-## Resources
-
-- [Metamask Test DApp](https://metamask.github.io/test-dapp/)
-- [Metamask JSON-RPC API](https://metamask.github.io/api-playground/api-documentation/)
-- [Metamask Provider API](https://docs.metamask.io/guide/ethereum-provider.html)
-- [EIP-1193](https://eips.ethereum.org/EIPS/eip-1193) Ethereum Provider JavaScript API
-- [EIP-3085](https://eips.ethereum.org/EIPS/eip-3085) Wallet Add Ethereum Chain RPC Method (`wallet_addEthereumChain`)

@@ -1,7 +1,7 @@
 import type { Page } from '@playwright/test'
 
 import { EventEmitter } from './EventEmitter.js'
-import type { Web3ProviderConfig } from './Web3ProviderBackend.js'
+import type { Web3ProviderConfig } from './backend.js'
 import { createHeadlessWeb3Provider } from './factory.js'
 import type { EvaluateFn, WindowEthereum } from './types.js'
 
