@@ -48,7 +48,7 @@ jobs:
 
       - name: Bump version to ${{ github.event.release.tag_name }}
         run: |
-          pnpm version ${{ github.event.release.tag_name }}
+          npm version ${{ github.event.release.tag_name }}
           git add .
           git commit -m "${{ github.event.release.tag_name }}"
 
