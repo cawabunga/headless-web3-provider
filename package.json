@@ -61,6 +61,7 @@
 		"@playwright/test": "^1.45.1",
 		"@types/node": "^20.14.9",
 		"prool": "^0.0.15",
+		"semantic-release": "^24.0.0",
 		"tsx": "^4.16.2",
 		"typescript": "~5.5.4",
 		"viem": "^2.17.1"

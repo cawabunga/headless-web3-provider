@@ -1,34 +1,41 @@
-name: Publish
-
+name: Release
 on:
-  release:
-    types: [published]
+  push:
+    branches:
+      - master # or main
+
+permissions:
+  contents: read # for checkout
 
 jobs:
-  publish:
-    name: Publish
+  release:
+    name: Release
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        node-version: [22]
+    permissions:
+      contents: write # to be able to publish a GitHub release
+      issues: write # to be able to comment on released issues
+      pull-requests: write # to be able to comment on released pull requests
+      id-token: write # to enable use of OIDC for npm provenance
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.release.target_commitish }}
+          fetch-depth: 0
 
       - name: Enable corepack
         run: corepack enable pnpm
-
-      - name: Install Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node-version }}
           cache: 'pnpm'
+          node-version: 22
+
+      - name: Verify the integrity of provenance attestations and registry signatures for installed dependencies
+        run: pnpm audit signatures
 
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
 
-      - run: pnpm install
+      - run: pnpm install --frozen-lockfile
       - name: Setup Biome
         uses: biomejs/setup-biome@v2
         with:
@@ -37,29 +44,11 @@ jobs:
         run: biome ci .
       - name: Install Playwright Browsers
         run: pnpm exec playwright install chromium
-
-      - name: Test
+      - name: Run tests
         run: pnpm test
 
-      - name: Set up git
-        run: |
-          git config --local user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git config --local user.name 'github-actions[bot]'
-
-      - name: Bump version to ${{ github.event.release.tag_name }}
-        run: |
-          npm version ${{ github.event.release.tag_name }}
-          git add .
-          git commit -m "${{ github.event.release.tag_name }}"
-
-      - name: Publish
+      - name: Release
         env:
-          NPM_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: |
-          pnpm config set //registry.npmjs.org/:_authToken=${NPM_AUTH_TOKEN}
-          pnpm publish --no-git-checks
-
-      - name: Push changes
-        run: git push
-        env:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: pnpm semantic-release
