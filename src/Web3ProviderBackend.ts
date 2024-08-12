@@ -36,6 +36,11 @@ export class Web3ProviderBackend
 	private chains: Chain[] = []
 	private wps: WalletPermissionSystem
 	private pendingRequests: PendingRequest[] = []
+	private pendingActions: {
+		method: Web3RequestKind
+		type: 'authorize' | 'reject'
+		notify: () => Promise<void>
+	}[] = []
 	private engine: JsonRpcEngine
 
 	constructor({ privateKeys, chains, ...config }: Web3ProviderConfig) {
@@ -47,16 +52,16 @@ export class Web3ProviderBackend
 
 		this.wps = new WalletPermissionSystem(config.permitted)
 		this.engine = createRpcEngine({
-			emit: this.emit.bind(this),
+			emit: (eventName, ...args) => this.emit(eventName, ...args),
 			debug: config.debug,
 			logger: config.logger,
 			wps: this.wps,
 			accounts: this.accounts,
-			waitAuthorization: this.waitAuthorization.bind(this),
-			addChain: this.addChain.bind(this),
-			switchChain: this.switchChain.bind(this),
-			getChain: this.getChain.bind(this),
-			getChainTransport: this.getChainTransport.bind(this),
+			waitAuthorization: (req, task) => this.waitAuthorization(req, task),
+			addChain: (chain) => this.addChain(chain),
+			switchChain: (chainId) => this.switchChain(chainId),
+			getChain: () => this.getChain(),
+			getChainTransport: () => this.getChainTransport(),
 		})
 	}
 
@@ -121,23 +126,75 @@ export class Web3ProviderBackend
 	}
 
 	private consumeRequest(requestKind: Web3RequestKind) {
-		const request = this.pendingRequests.find((request) => {
+		const requestIndex = this.pendingRequests.findIndex((request) => {
 			return request.requestInfo.method === requestKind
 		})
 
 		// If found, remove it from the pendingRequests array
-		if (request) {
-			this.pendingRequests = this.pendingRequests.filter(
-				(item) => item !== request,
-			)
+		if (requestIndex !== -1) {
+			const request = this.pendingRequests[requestIndex]
+			this.pendingRequests.splice(requestIndex, 1)
+
+			return request
 		}
 
-		return request!
+		return null
+	}
+
+	private consumeAction(requestKind: Web3RequestKind) {
+		const actionIndex = this.pendingActions.findIndex(
+			(act) => act.method === requestKind,
+		)
+
+		if (actionIndex !== -1) {
+			const action = this.pendingActions[actionIndex]
+			this.pendingActions.splice(actionIndex, 1)
+
+			return action
+		}
+
+		return null
+	}
+
+	private createAction({
+		requestKind,
+		type,
+		callback,
+	}: {
+		requestKind: Web3RequestKind
+		type: 'authorize' | 'reject'
+		callback?: () => void
+	}) {
+		return new Promise<void>((resolve) => {
+			const notify = async () => {
+				resolve(callback?.())
+			}
+
+			this.pendingActions.push({ method: requestKind, type, notify })
+		})
 	}
 
 	async authorize(requestKind: Web3RequestKind): Promise<void> {
 		const pendingRequest = this.consumeRequest(requestKind)
-		return pendingRequest.authorize()
+
+		if (pendingRequest) return pendingRequest.authorize()
+
+		return this.createAction({ requestKind, type: 'authorize' })
+	}
+
+	async reject(
+		requestKind: Web3RequestKind,
+		reason: ErrorWithCode = Deny(),
+	): Promise<void> {
+		const pendingRequest = this.consumeRequest(requestKind)
+
+		if (pendingRequest) return pendingRequest.reject(reason)
+
+		return this.createAction({
+			requestKind,
+			type: 'reject',
+			callback: () => Promise.reject(reason),
+		})
 	}
 
 	private getChainTransport(): ChainTransport {
@@ -148,17 +205,14 @@ export class Web3ProviderBackend
 		return transport
 	}
 
-	async reject(
-		requestKind: Web3RequestKind,
-		reason: ErrorWithCode = Deny(),
-	): Promise<void> {
-		const pendingRequest = this.consumeRequest(requestKind)
-		return pendingRequest.reject(reason)
-	}
-
 	waitAuthorization<T>(req: JsonRpcRequest, task: () => Promise<T>) {
 		if (this.wps.isPermitted(req.method, '')) {
 			return task()
+		}
+
+		const action = this.consumeAction(req.method as Web3RequestKind)
+		if (action) {
+			return task().then(() => action.notify())
 		}
 
 		return new Promise<T>((resolve, reject) => {

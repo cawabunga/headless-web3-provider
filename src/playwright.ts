@@ -68,9 +68,10 @@ export async function injectHeadlessWeb3Provider({
 
 						return Reflect.get(target, prop)
 					},
+					set(target: EventEmitter, prop: string, value: unknown): boolean {
+						return Reflect.set(target, prop, value)
+					},
 				}),
-				writable: false,
-				configurable: false,
 			})
 			window.dispatchEvent(new Event('ethereum#initialized'))
 
