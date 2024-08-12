@@ -15,6 +15,9 @@ jobs:
         with:
           cache: 'pnpm'
           node-version: 22
+          
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
 
       - run: pnpm install --frozen-lockfile
       - name: Setup Biome
