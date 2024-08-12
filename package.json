@@ -1,6 +1,6 @@
 {
 	"name": "headless-web3-provider",
-	"version": "0.2.4",
+	"version": "1.0.0",
 	"description": "Headless MetaMask for testing Ethereum apps",
 	"author": "v1rtl <hi@v1rtl.site>",
 	"license": "MIT",
@@ -8,11 +8,11 @@
 	"types": "./dist/types.d.ts",
 	"exports": {
 		".": {
-			"import":"./dist/index.js",
+			"import": "./dist/index.js",
 			"types": "./dist/types.d.ts"
 		},
 		"./playwright": {
-			"import":"./dist/playwright.js",
+			"import": "./dist/playwright.js",
 			"types": "./dist/playwright.d.ts"
 		},
 		"./types": {
