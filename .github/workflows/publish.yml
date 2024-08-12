@@ -16,7 +16,8 @@ jobs:
         with:
           ref: ${{ github.event.release.target_commitish }}
 
-      - uses: pnpm/action-setup@v4
+      - name: Enable corepack
+        run: corepack enable pnpm
 
       - name: Install Node.js
         uses: actions/setup-node@v4
@@ -24,7 +25,18 @@ jobs:
           node-version: ${{ matrix.node-version }}
           cache: 'pnpm'
 
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+
       - run: pnpm install
+      - name: Setup Biome
+        uses: biomejs/setup-biome@v2
+        with:
+          version: latest
+      - name: Run Biome
+        run: biome ci .
+      - name: Install Playwright Browsers
+        run: pnpm exec playwright install chromium
 
       - name: Test
         run: pnpm test
