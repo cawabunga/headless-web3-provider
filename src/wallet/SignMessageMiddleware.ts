@@ -2,7 +2,7 @@ import {
   createAsyncMiddleware,
   type JsonRpcMiddleware,
 } from '@metamask/json-rpc-engine'
-import { type Json, type JsonRpcParams } from '@metamask/utils'
+import type { Json, JsonRpcParams } from '@metamask/utils'
 import { signTypedData, SignTypedDataVersion } from '@metamask/eth-sig-util'
 import { ethers } from 'ethers'
 import assert from 'node:assert/strict'
