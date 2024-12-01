@@ -54,7 +54,7 @@ export async function injectHeadlessWeb3Provider(
       web3Provider[method](...args)
   )
 
-  const uuid = crypto.randomUUID()
+  const uuid = 'b9838e9f-e9bc-48dd-af0b-6f98949ae677'
 
   await page.addInitScript(
     (uuid) => {
