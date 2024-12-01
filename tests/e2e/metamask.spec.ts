@@ -131,12 +131,12 @@ test('deploy a token', async ({ page }) => {
   await page.getByRole('button', { name: 'Connect', exact: true }).click()
   await wallet.authorize(Web3RequestKind.RequestAccounts)
 
-  await expect(page.locator('#tokenAddresses')).toBeEmpty()
+  await expect(page.locator('#erc20TokenAddresses')).toBeEmpty()
   await page.locator('text=Create Token').click()
-  await expect(page.locator('#tokenAddresses')).toBeEmpty()
+  await expect(page.locator('#erc20TokenAddresses')).toBeEmpty()
 
   await wallet.authorize(Web3RequestKind.SendTransaction)
-  await expect(page.locator('#tokenAddresses')).toContainText(/0x.+/)
+  await expect(page.locator('#erc20TokenAddresses')).toContainText(/0x.+/)
 })
 
 const getTransactionCount = async (
