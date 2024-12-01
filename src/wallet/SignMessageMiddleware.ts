@@ -18,7 +18,7 @@ export function makeSignMessageMiddleware(walletThunk: () => ethers.Wallet) {
           // @ts-expect-error todo: parse params
           assert.equal(address, ethers.utils.getAddress(req.params[1]))
           // @ts-expect-error todo: parse params
-          const message = toUtf8String(req.params[0])
+          const message = req.params[0];
 
           const signature = await wallet.signMessage(message)
 
