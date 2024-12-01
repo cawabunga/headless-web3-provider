@@ -6,7 +6,6 @@ import type { Json, JsonRpcParams } from '@metamask/utils'
 import { signTypedData, SignTypedDataVersion } from '@metamask/eth-sig-util'
 import { ethers } from 'ethers'
 import assert from 'node:assert/strict'
-import { toUtf8String } from 'ethers/lib/utils'
 
 export function makeSignMessageMiddleware(walletThunk: () => ethers.Wallet) {
   const middleware: JsonRpcMiddleware<JsonRpcParams, Json> =
@@ -17,8 +16,14 @@ export function makeSignMessageMiddleware(walletThunk: () => ethers.Wallet) {
           const address = await wallet.getAddress()
           // @ts-expect-error todo: parse params
           assert.equal(address, ethers.utils.getAddress(req.params[1]))
+
+          /**
+           * It's important to split hex strings into bytes, because `wallet.signMessage`
+           * won't properly handle hex strings which are not UTF-8 encoded.
+           * Caution: MetaMask dApp doesn't have singing non-UTF-8 string, so no test for this case.
+           */
           // @ts-expect-error todo: parse params
-          const message = req.params[0];
+          const message = ethers.utils.arrayify(req.params[0])
 
           const signature = await wallet.signMessage(message)
 
