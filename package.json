@@ -38,6 +38,7 @@
     "@parcel/transformer-typescript-types": "^2.7.0",
     "@playwright/test": "^1.26.1",
     "@types/node": "^16.0.0",
+    "clean-package": "^2.2.0",
     "generic-pool": "^3.9.0",
     "parcel": "^2.7.0",
     "prettier": "^2.7.1",
